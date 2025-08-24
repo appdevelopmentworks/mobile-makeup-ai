@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MakeupAI - 画面遷移図・ワイヤーフレーム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        /* タブ */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .tab {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .tab.active {
+            background: white;
+            color: #764ba2;
+            border-color: white;
+        }
+        
+        /* コンテンツエリア */
+        .content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        .content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 画面遷移図 */
+        .flow-diagram {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .flow-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .flow-node {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px 25px;
+            min-width: 150px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .flow-node:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .flow-node.primary {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .flow-node.auth {
+            background: #48bb78;
+            color: white;
+            border-color: #48bb78;
+        }
+        
+        .flow-arrow {
+            font-size: 24px;
+            color: #667eea;
+        }
+        
+        .flow-arrow.down {
+            transform: rotate(90deg);
+            margin: 10px 0;
+        }
+        
+        /* スマートフォンフレーム */
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: #000;
+            border-radius: 40px;
+            padding: 10px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .status-bar {
+            height: 44px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .screen-content {
+            height: calc(100% - 44px);
+            overflow-y: auto;
+            background: #fff;
+        }
+        
+        /* 共通コンポーネント */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            color: #6b7280;
+            transition: color 0.3s;
+        }
+        
+        .nav-item:hover {
+            color: #667eea;
+        }
+        
+        .nav-item.active {
+            color: #667eea;
+        }
+        
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            background: currentColor;
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-position: center;
+        }
+        
+        .nav-icon.home { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E"); }
+        .nav-icon.camera { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/%3E%3Ccircle cx='12' cy='13' r='4'/%3E%3C/svg%3E"); }
+        .nav-icon.history { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3Cpath d='M12 7v5l4 2'/%3E%3C/svg%3E"); }
+        .nav-icon.settings { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M12 1v6m0 6v6m4.22-13.22l4.24 4.24m-4.24 8.14l4.24 4.24M20 12h-6m-6 0H1m4.22 8.5l4.24-4.24M8.5 8.5L4.26 4.26'/%3E%3C/svg%3E"); }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-outline {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* 各画面のスタイル */
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        
+        .upload-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: #e9ecef;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+        
+        .form-group {
+            margin: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .card-text {
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .result-image {
+            width: 100%;
+            height: 200px;
+            background: #f7fafc;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+        }
+        
+        .trend-selector {
+            display: flex;
+            gap: 10px;
+            margin: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .trend-chip {
+            background: #f7fafc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .trend-chip:hover {
+            border-color: #667eea;
+        }
+        
+        .trend-chip.selected {
+            background: #667eea;
+            color: white;
+        }
+        
+        .price-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px;
+            text-align: center;
+        }
+        
+        .price-card.premium {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        
+        .price {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .feature-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #48bb78;
+            font-weight: bold;
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .phone-frame {
+                width: 100%;
+                max-width: 375px;
+            }
+            
+            .flow-diagram {
+                padding: 20px 10px;
+            }
+            
+            .flow-node {
+                min-width: 120px;
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MakeupAI - 画面遷移図・ワイヤーフレーム</h1>
+        <p class="subtitle">クリックして各画面の詳細を確認できます</p>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('flow')">画面遷移図</div>
+            <div class="tab" onclick="showTab('home')">ホーム画面</div>
+            <div class="tab" onclick="showTab('auth')">認証画面</div>
+            <div class="tab" onclick="showTab('upload')">写真アップロード</div>
+            <div class="tab" onclick="showTab('analysis')">分析結果</div>
+            <div class="tab" onclick="showTab('generation')">画像生成</div>
+            <div class="tab" onclick="showTab('history')">履歴</div>
+            <div class="tab" onclick="showTab('settings')">設定</div>
+            <div class="tab" onclick="showTab('pricing')">料金プラン</div>
+        </div>
+        
+        <!-- 画面遷移図 -->
+        <div id="flow" class="content active">
+            <div class="flow-diagram">
+                <h2 style="text-align: center; color: #2d3748; margin-bottom: 30px;">画面遷移フロー</h2>
+                
+                <div class="flow-container">
+                    <!-- スタート -->
+                    <div class="flow-row">
+                        <div class="flow-node primary" onclick="showTab('home')">
+                            <div>アプリ起動</div>
+                            <small>ホーム画面</small>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-arrow down">↓</div>
+                    
+                    <!-- 認証分岐 -->
+                    <div class="flow-row">
+                        <div class="flow-node auth" onclick="showTab('auth')">
+                            <div>未ログイン</div>
+                            <small>ログイン/登録</small>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-node" onclick="showTab('home')">
+                            <div>ログイン済み</div>
+                            <small>ダッシュボード</small>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-arrow down">↓</div>
+                    
+                    <!-- メイン機能 -->
+                    <div class="flow-row">
+                        <div class="flow-node" onclick="showTab('upload')">
+                            <div>📸</div>
+                            <div>写真撮影</div>
+                            <small>アップロード</small>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-node" onclick="showTab('analysis')">
+                            <div>🔍</div>
+                            <div>顔分析</div>
+                            <small>AI分析中</small>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-node" onclick="showTab('analysis')">
+                            <div>💄</div>
+                            <div>メイク提案</div>
+                            <small>結果表示</small>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-arrow down">↓</div>
+                    
+                    <!-- オプション機能 -->
+                    <div class="flow-row">
+                        <div class="flow-node" onclick="showTab('generation')">
+                            <div>🎨</div>
+                            <div>画像生成</div>
+                            <small>メイク後イメージ</small>
+                        </div>
+                        <div class="flow-node" onclick="showTab('history')">
+                            <div>📋</div>
+                            <div>履歴確認</div>
+                            <small>過去の分析</small>
+                        </div>
+                        <div class="flow-node" onclick="showTab('settings')">
+                            <div>⚙️</div>
+                            <div>設定</div>
+                            <small>プロフィール</small>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-arrow down">↓</div>
+                    
+                    <!-- プレミアム -->
+                    <div class="flow-row">
+                        <div class="flow-node" style="background: #ffd700; border-color: #ffd700;" onclick="showTab('pricing')">
+                            <div>👑</div>
+                            <div>プレミアム</div>
+                            <small>月額3,000円</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 40px; padding: 20px; background: #f7fafc; border-radius: 10px;">
+                    <h3 style="color: #4a5568; margin-bottom: 15px;">主要な画面遷移パターン</h3>
+                    <ul style="color: #718096; line-height: 2;">
+                        <li>🔄 <strong>初回利用フロー：</strong>アプリ起動 → 会員登録 → チュートリアル → 写真撮影 → 分析 → 結果確認</li>
+                        <li>🔄 <strong>リピート利用フロー：</strong>アプリ起動 → ホーム → 写真撮影 → 分析 → メイク後画像生成</li>
+                        <li>🔄 <strong>課金フロー：</strong>無料回数消費 → 課金案内 → プラン選択 → 決済 → プレミアム機能解放</li>
+                        <li>🔄 <strong>履歴確認フロー：</strong>ホーム → 履歴 → 過去の分析選択 → 詳細確認 → 再生成</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ホーム画面 -->
+        <div id="home" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div class="header">
+                            <h2>MakeupAI</h2>
+                            <p style="font-size: 14px; margin-top: 5px;">あなたに最適なメイクを提案</p>
+                        </div>
+                        
+                        <div style="padding: 20px;">
+                            <div class="card">
+                                <div class="card-title">今月の利用状況</div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                                    <div>
+                                        <div style="font-size: 24px; color: #667eea; font-weight: bold;">1/3</div>
+                                        <div style="font-size: 12px; color: #718096;">利用回数</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 14px; color: #4a5568;">無料プラン</div>
+                                        <a href="#" style="font-size: 12px; color: #667eea;">アップグレード →</a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn" onclick="showTab('upload')">
+                                メイク分析を始める
+                            </button>
+                            
+                            <div class="card" style="background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);">
+                                <div class="card-title" style="color: #744210;">🌟 今月のトレンド</div>
+                                <div class="card-text" style="color: #744210;">韓国風グラデーションリップが人気！</div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">クイックアクセス</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                                    <button class="btn-outline" style="padding: 10px;">履歴</button>
+                                    <button class="btn-outline" style="padding: 10px;">トレンド</button>
+                                    <button class="btn-outline" style="padding: 10px;">使い方</button>
+                                    <button class="btn-outline" style="padding: 10px;">設定</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bottom-nav">
+                            <div class="nav-item active">
+                                <div class="nav-icon home"></div>
+                                <span style="font-size: 12px;">ホーム</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('upload')">
+                                <div class="nav-icon camera"></div>
+                                <span style="font-size: 12px;">分析</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('history')">
+                                <div class="nav-icon history"></div>
+                                <span style="font-size: 12px;">履歴</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('settings')">
+                                <div class="nav-icon settings"></div>
+                                <span style="font-size: 12px;">設定</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 認証画面 -->
+        <div id="auth" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div style="padding: 40px 20px;">
+                            <div style="text-align: center; margin-bottom: 40px;">
+                                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px;">
+                                    💄
+                                </div>
+                                <h2 style="color: #2d3748; margin-bottom: 10px;">MakeupAI</h2>
+                                <p style="color: #718096; font-size: 14px;">あなただけのメイクアドバイザー</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">メールアドレス</label>
+                                <input type="email" class="form-input" placeholder="example@email.com">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">パスワード</label>
+                                <input type="password" class="form-input" placeholder="••••••••">
+                            </div>
+                            
+                            <button class="btn">ログイン</button>
+                            
+                            <div style="text-align: center; margin: 20px 0;">
+                                <span style="color: #718096; font-size: 14px;">または</span>
+                            </div>
+                            
+                            <button class="btn-outline">
+                                Googleでログイン
+                            </button>
+                            
+                            <div style="text-align: center; margin-top: 30px;">
+                                <p style="color: #718096; font-size: 14px;">
+                                    アカウントをお持ちでない方は
+                                    <a href="#" style="color: #667eea;">新規登録</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 写真アップロード画面 -->
+        <div id="upload" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div class="header">
+                            <h2>写真をアップロード</h2>
+                            <p style="font-size: 14px; margin-top: 5px;">正面から撮影してください</p>
+                        </div>
+                        
+                        <div style="padding: 20px;">
+                            <div class="upload-area" onclick="showTab('analysis')">
+                                <div class="upload-icon">📸</div>
+                                <div style="font-size: 18px; color: #4a5568; margin-bottom: 10px;">
+                                    タップして撮影
+                                </div>
+                                <div style="font-size: 14px; color: #a0aec0;">
+                                    または写真を選択
+                                </div>
+                            </div>
+                            
+                            <div class="card" style="background: #e6fffa; border: 1px solid #81e6d9;">
+                                <div class="card-title" style="color: #234e52;">📝 撮影のポイント</div>
+                                <ul style="margin-top: 10px; padding-left: 20px; color: #2c7a7b; font-size: 14px; line-height: 1.8;">
+                                    <li>正面を向いて撮影</li>
+                                    <li>明るい場所で撮影</li>
+                                    <li>顔全体が写るように</li>
+                                    <li>メイクありでもOK</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="trend-selector">
+                                <div class="trend-chip selected">日本</div>
+                                <div class="trend-chip">韓国</div>
+                                <div class="trend-chip">欧米</div>
+                                <div class="trend-chip">中国</div>
+                            </div>
+                            
+                            <button class="btn-outline">
+                                過去の写真から選択
+                            </button>
+                        </div>
+                        
+                        <div class="bottom-nav">
+                            <div class="nav-item" onclick="showTab('home')">
+                                <div class="nav-icon home"></div>
+                                <span style="font-size: 12px;">ホーム</span>
+                            </div>
+                            <div class="nav-item active">
+                                <div class="nav-icon camera"></div>
+                                <span style="font-size: 12px;">分析</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('history')">
+                                <div class="nav-icon history"></div>
+                                <span style="font-size: 12px;">履歴</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('settings')">
+                                <div class="nav-icon settings"></div>
+                                <span style="font-size: 12px;">設定</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分析結果画面 -->
+        <div id="analysis" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div class="header">
+                            <h2>分析結果</h2>
+                            <p style="font-size: 14px; margin-top: 5px;">あなたに最適なメイク</p>
+                        </div>
+                        
+                        <div style="padding: 20px; padding-bottom: 100px;">
+                            <div class="result-image">
+                                分析済み写真
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">顔型診断</div>
+                                <div class="card-text">
+                                    <strong style="color: #667eea;">卵型</strong><br>
+                                    理想的なバランスの顔型です。どんなメイクも似合いやすいです。
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">パーソナルカラー</div>
+                                <div class="card-text">
+                                    <strong style="color: #667eea;">イエローベース・春</strong><br>
+                                    明るく温かみのある色が似合います。
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">💄 ベースメイク</div>
+                                <div class="card-text">
+                                    • ピンクベージュ系のファンデーション<br>
+                                    • ハイライトは頬骨の上に<br>
+                                    • チークはコーラルピンク
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">👁 アイメイク</div>
+                                <div class="card-text">
+                                    • ブラウン系のアイシャドウ<br>
+                                    • アイラインは細めに<br>
+                                    • マスカラはボリュームタイプ
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">👄 リップメイク</div>
+                                <div class="card-text">
+                                    • コーラルオレンジ系<br>
+                                    • グロスで潤い感をプラス<br>
+                                    • リップライナーで輪郭を整える
+                                </div>
+                            </div>
+                            
+                            <button class="btn" onclick="showTab('generation')">
+                                メイク後イメージを生成
+                            </button>
+                            
+                            <button class="btn-outline">
+                                詳細なアドバイスを見る
+                            </button>
+                        </div>
+                        
+                        <div class="bottom-nav">
+                            <div class="nav-item" onclick="showTab('home')">
+                                <div class="nav-icon home"></div>
+                                <span style="font-size: 12px;">ホーム</span>
+                            </div>
+                            <div class="nav-item active">
+                                <div class="nav-icon camera"></div>
+                                <span style="font-size: 12px;">分析</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('history')">
+                                <div class="nav-icon history"></div>
+                                <span style="font-size: 12px;">履歴</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('settings')">
+                                <div class="nav-icon settings"></div>
+                                <span style="font-size: 12px;">設定</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 画像生成画面 -->
+        <div id="generation" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div class="header">
+                            <h2>メイク後イメージ</h2>
+                            <p style="font-size: 14px; margin-top: 5px;">AI生成結果</p>
+                        </div>
+                        
+                        <div style="padding: 20px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                                <div>
+                                    <div style="font-size: 12px; color: #718096; margin-bottom: 5px;">Before</div>
+                                    <div class="result-image" style="height: 150px;">元の写真</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 12px; color: #718096; margin-bottom: 5px;">After</div>
+                                    <div class="result-image" style="height: 150px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);">生成画像</div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">適用されたメイク</div>
+                                <div class="card-text">
+                                    • ナチュラルベースメイク<br>
+                                    • ブラウン系グラデーション<br>
+                                    • コーラルピンクのチーク<br>
+                                    • グロッシーリップ
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; margin: 20px 0;">
+                                <button class="btn" style="flex: 1;">
+                                    💾 保存
+                                </button>
+                                <button class="btn-outline" style="flex: 1;">
+                                    🔄 再生成
+                                </button>
+                            </div>
+                            
+                            <div class="card" style="background: #f0f9ff; border: 1px solid #90cdf4;">
+                                <div class="card-title" style="color: #1e40af;">💡 プロのアドバイス</div>
+                                <div class="card-text" style="color: #3730a3;">
+                                    このメイクのポイントは、肌の透明感を活かしたナチュラルな仕上がりです。チークは笑った時の頬の高い位置に円を描くように入れると自然な血色感が出ます。
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bottom-nav">
+                            <div class="nav-item" onclick="showTab('home')">
+                                <div class="nav-icon home"></div>
+                                <span style="font-size: 12px;">ホーム</span>
+                            </div>
+                            <div class="nav-item active">
+                                <div class="nav-icon camera"></div>
+                                <span style="font-size: 12px;">分析</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('history')">
+                                <div class="nav-icon history"></div>
+                                <span style="font-size: 12px;">履歴</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('settings')">
+                                <div class="nav-icon settings"></div>
+                                <span style="font-size: 12px;">設定</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 履歴画面 -->
+        <div id="history" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div class="header">
+                            <h2>分析履歴</h2>
+                            <p style="font-size: 14px; margin-top: 5px;">過去の分析結果</p>
+                        </div>
+                        
+                        <div style="padding: 20px; padding-bottom: 100px;">
+                            <div class="card">
+                                <div style="display: flex; gap: 15px;">
+                                    <div class="result-image" style="width: 80px; height: 80px; flex-shrink: 0;">写真</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: bold; color: #2d3748;">2025年8月20日</div>
+                                        <div style="font-size: 14px; color: #718096; margin-top: 5px;">
+                                            日常メイク・ナチュラル
+                                        </div>
+                                        <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 12px; font-size: 12px;">卵型</span>
+                                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 12px; font-size: 12px;">イエベ春</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div style="display: flex; gap: 15px;">
+                                    <div class="result-image" style="width: 80px; height: 80px; flex-shrink: 0;">写真</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: bold; color: #2d3748;">2025年8月15日</div>
+                                        <div style="font-size: 14px; color: #718096; margin-top: 5px;">
+                                            パーティーメイク・華やか
+                                        </div>
+                                        <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 12px; font-size: 12px;">卵型</span>
+                                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 12px; font-size: 12px;">イエベ春</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div style="display: flex; gap: 15px;">
+                                    <div class="result-image" style="width: 80px; height: 80px; flex-shrink: 0;">写真</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: bold; color: #2d3748;">2025年8月10日</div>
+                                        <div style="font-size: 14px; color: #718096; margin-top: 5px;">
+                                            韓国風メイク・トレンド
+                                        </div>
+                                        <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 12px; font-size: 12px;">卵型</span>
+                                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 12px; font-size: 12px;">イエベ春</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bottom-nav">
+                            <div class="nav-item" onclick="showTab('home')">
+                                <div class="nav-icon home"></div>
+                                <span style="font-size: 12px;">ホーム</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('upload')">
+                                <div class="nav-icon camera"></div>
+                                <span style="font-size: 12px;">分析</span>
+                            </div>
+                            <div class="nav-item active">
+                                <div class="nav-icon history"></div>
+                                <span style="font-size: 12px;">履歴</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('settings')">
+                                <div class="nav-icon settings"></div>
+                                <span style="font-size: 12px;">設定</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 設定画面 -->
+        <div id="settings" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div class="header">
+                            <h2>設定</h2>
+                            <p style="font-size: 14px; margin-top: 5px;">アカウント・アプリ設定</p>
+                        </div>
+                        
+                        <div style="padding: 20px; padding-bottom: 100px;">
+                            <div class="card">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                                        👤
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: bold; color: #2d3748;">ユーザー名</div>
+                                        <div style="font-size: 14px; color: #718096;">user@example.com</div>
+                                        <div style="font-size: 12px; color: #667eea; margin-top: 5px;">無料プラン</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">アカウント設定</div>
+                                <div style="margin-top: 15px;">
+                                    <div style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: #4a5568;">プロフィール編集</span>
+                                        <span style="color: #cbd5e0;">›</span>
+                                    </div>
+                                    <div style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: #4a5568;">メール通知</span>
+                                        <span style="color: #cbd5e0;">›</span>
+                                    </div>
+                                    <div style="padding: 12px 0; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: #4a5568;">パスワード変更</span>
+                                        <span style="color: #cbd5e0;">›</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-title">アプリ設定</div>
+                                <div style="margin-top: 15px;">
+                                    <div style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: #4a5568;">言語</span>
+                                        <span style="color: #718096; font-size: 14px;">日本語 ›</span>
+                                    </div>
+                                    <div style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: #4a5568;">画質設定</span>
+                                        <span style="color: #718096; font-size: 14px;">高画質 ›</span>
+                                    </div>
+                                    <div style="padding: 12px 0; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: #4a5568;">キャッシュクリア</span>
+                                        <span style="color: #cbd5e0;">›</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn" onclick="showTab('pricing')">
+                                プレミアムにアップグレード
+                            </button>
+                            
+                            <button class="btn-outline" style="color: #e53e3e; border-color: #e53e3e;">
+                                ログアウト
+                            </button>
+                        </div>
+                        
+                        <div class="bottom-nav">
+                            <div class="nav-item" onclick="showTab('home')">
+                                <div class="nav-icon home"></div>
+                                <span style="font-size: 12px;">ホーム</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('upload')">
+                                <div class="nav-icon camera"></div>
+                                <span style="font-size: 12px;">分析</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('history')">
+                                <div class="nav-icon history"></div>
+                                <span style="font-size: 12px;">履歴</span>
+                            </div>
+                            <div class="nav-item active">
+                                <div class="nav-icon settings"></div>
+                                <span style="font-size: 12px;">設定</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 料金プラン画面 -->
+        <div id="pricing" class="content">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="status-bar">
+                        <span>9:41</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="screen-content">
+                        <div class="header">
+                            <h2>料金プラン</h2>
+                            <p style="font-size: 14px; margin-top: 5px;">最適なプランを選択</p>
+                        </div>
+                        
+                        <div style="padding: 20px; padding-bottom: 100px;">
+                            <div class="price-card">
+                                <div style="font-size: 20px; font-weight: bold; color: #2d3748;">無料プラン</div>
+                                <div class="price">¥0<span style="font-size: 14px; color: #718096;">/月</span></div>
+                                <ul class="feature-list">
+                                    <li>月3回まで分析可能</li>
+                                    <li>基本的なメイク提案</li>
+                                    <li>AI画像生成</li>
+                                    <li>履歴保存（30日間）</li>
+                                </ul>
+                                <button class="btn-outline">現在のプラン</button>
+                            </div>
+                            
+                            <div class="price-card premium">
+                                <div style="background: #ffd700; color: #744210; display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-bottom: 10px;">
+                                    おすすめ
+                                </div>
+                                <div style="font-size: 20px; font-weight: bold; color: #2d3748;">プレミアムプラン</div>
+                                <div class="price">¥3,000<span style="font-size: 14px; color: #718096;">/月</span></div>
+                                <ul class="feature-list">
+                                    <li>無制限の分析</li>
+                                    <li>プロのメイクアドバイス</li>
+                                    <li>高画質AI画像生成</li>
+                                    <li>履歴永久保存</li>
+                                    <li>最新トレンド情報</li>
+                                    <li>広告非表示</li>
+                                    <li>優先サポート</li>
+                                </ul>
+                                <button class="btn">アップグレード</button>
+                            </div>
+                            
+                            <div class="card" style="background: #f0f9ff; border: 1px solid #90cdf4;">
+                                <div class="card-text" style="color: #1e40af; text-align: center;">
+                                    🎁 今なら初月50%OFF！<br>
+                                    <strong>¥1,500</strong>でお試しいただけます
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bottom-nav">
+                            <div class="nav-item" onclick="showTab('home')">
+                                <div class="nav-icon home"></div>
+                                <span style="font-size: 12px;">ホーム</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('upload')">
+                                <div class="nav-icon camera"></div>
+                                <span style="font-size: 12px;">分析</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('history')">
+                                <div class="nav-icon history"></div>
+                                <span style="font-size: 12px;">履歴</span>
+                            </div>
+                            <div class="nav-item" onclick="showTab('settings')">
+                                <div class="nav-icon settings"></div>
+                                <span style="font-size: 12px;">設定</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabName) {
+            // すべてのコンテンツを非表示
+            const contents = document.querySelectorAll('.content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // すべてのタブを非アクティブ化
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 選択されたコンテンツを表示
+            document.getElementById(tabName).classList.add('active');
+            
+            // 対応するタブをアクティブ化
+            const tabLabels = {
+                'flow': '画面遷移図',
+                'home': 'ホーム画面',
+                'auth': '認証画面',
+                'upload': '写真アップロード',
+                'analysis': '分析結果',
+                'generation': '画像生成',
+                'history': '履歴',
+                'settings': '設定',
+                'pricing': '料金プラン'
+            };
+            
+            tabs.forEach(tab => {
+                if (tab.textContent === tabLabels[tabName]) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // スクロールを上部に
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>
