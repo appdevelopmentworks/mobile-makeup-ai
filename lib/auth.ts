@@ -68,15 +68,23 @@ export async function signIn(data: SignInData): Promise<AuthResult> {
 }
 
 // Sign in with Google OAuth
-export async function signInWithGoogle() {
+export async function signInWithGoogle(redirectTo?: string) {
   if (!isSupabaseConfigured) {
     return { error: { message: 'Authentication is not configured', name: 'ConfigError', status: 400 } as AuthError }
+  }
+
+  const callbackUrl = new URL(`${window.location.origin}/auth/callback`)
+  
+  // Add redirect destination as state parameter
+  if (redirectTo) {
+    const state = encodeURIComponent(JSON.stringify({ redirectTo }))
+    callbackUrl.searchParams.set('state', state)
   }
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`
+      redirectTo: callbackUrl.toString()
     }
   })
 

@@ -100,7 +100,7 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const { error } = await signInWithGoogle()
+      const { error } = await signInWithGoogle('/dashboard')
 
       if (error) {
         toast({
@@ -108,14 +108,15 @@ export default function SignupPage() {
           title: 'Google登録エラー',
           description: error.message,
         })
+        setLoading(false)
       }
+      // Don't set loading to false here if successful, as we're redirecting
     } catch (err) {
       toast({
         variant: 'destructive',
         title: '登録エラー',
         description: '予期せぬエラーが発生しました',
       })
-    } finally {
       setLoading(false)
     }
   }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,19 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+  const errorParam = searchParams.get('error')
   const { toast } = useToast()
+
+  // Show error message from URL parameters (e.g., from OAuth callback)
+  useEffect(() => {
+    if (errorParam) {
+      toast({
+        variant: 'destructive',
+        title: '認証エラー',
+        description: decodeURIComponent(errorParam),
+      })
+    }
+  }, [errorParam, toast])
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,7 +72,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { error } = await signInWithGoogle()
+      const { error } = await signInWithGoogle(redirectTo)
 
       if (error) {
         toast({
@@ -68,14 +80,15 @@ export default function LoginPage() {
           title: 'Googleログインエラー',
           description: error.message,
         })
+        setLoading(false)
       }
+      // Don't set loading to false here if successful, as we're redirecting
     } catch (err) {
       toast({
         variant: 'destructive',
         title: 'ログインエラー',
         description: '予期せぬエラーが発生しました',
       })
-    } finally {
       setLoading(false)
     }
   }
@@ -144,7 +157,7 @@ export default function LoginPage() {
 
             <div className="flex justify-end">
               <Link 
-                href="/forgot-password" 
+                href="/auth/forgot-password" 
                 className="text-sm text-pink-600 hover:underline"
               >
                 パスワードを忘れた方
