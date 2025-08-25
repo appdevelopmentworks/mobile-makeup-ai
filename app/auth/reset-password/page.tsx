@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
   return (
     <MainLayout showHeader={false} showFooter={false} showBottomNav={false}>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md mobile-card">
           <CardHeader className="text-center space-y-2">
             <div className="mx-auto w-12 h-12 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center mb-4">
               <Sparkles className="w-6 h-6 text-white" />
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handlePasswordReset} className="space-y-4">
+            <form onSubmit={handlePasswordReset} className="mobile-form">
               <div className="space-y-2">
                 <Label htmlFor="password">新しいパスワード</Label>
                 <div className="relative">
@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
+                    className="pl-10 pr-10 mobile-input"
                     placeholder="新しいパスワードを入力"
                     required
                     minLength={8}
@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10 pr-10"
+                    className="pl-10 pr-10 mobile-input"
                     placeholder="パスワードを再入力"
                     required
                     minLength={8}
@@ -157,7 +157,7 @@ export default function ResetPasswordPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="w-full btn-primary touch-target"
                 disabled={loading}
               >
                 {loading ? 'パスワード更新中...' : 'パスワードを更新'}

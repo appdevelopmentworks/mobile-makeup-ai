@@ -229,26 +229,31 @@ export default function SettingsPage() {
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
+            <TabsTrigger value="profile" className="flex flex-col items-center gap-1 px-2 py-3 text-xs">
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">プロフィール</span>
+              <span className="hidden xs:inline sm:hidden md:inline">プロフィール</span>
+              <span className="xs:hidden sm:inline md:hidden">プロフ</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <TabsTrigger value="notifications" className="flex flex-col items-center gap-1 px-2 py-3 text-xs">
               <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">通知</span>
+              <span className="hidden xs:inline sm:hidden md:inline">通知</span>
+              <span className="xs:hidden sm:inline md:hidden">通知</span>
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center gap-2">
+            <TabsTrigger value="privacy" className="flex flex-col items-center gap-1 px-2 py-3 text-xs">
               <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">プライバシー</span>
+              <span className="hidden xs:inline sm:hidden md:inline">プライバシー</span>
+              <span className="xs:hidden sm:inline md:hidden">設定</span>
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <TabsTrigger value="appearance" className="flex flex-col items-center gap-1 px-2 py-3 text-xs">
               <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">外観</span>
+              <span className="hidden xs:inline sm:hidden md:inline">外観</span>
+              <span className="xs:hidden sm:inline md:hidden">外観</span>
             </TabsTrigger>
-            <TabsTrigger value="subscription" className="flex items-center gap-2">
+            <TabsTrigger value="subscription" className="flex flex-col items-center gap-1 px-2 py-3 text-xs">
               <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">プラン</span>
+              <span className="hidden xs:inline sm:hidden md:inline">プラン</span>
+              <span className="xs:hidden sm:inline md:hidden">プラン</span>
             </TabsTrigger>
           </TabsList>
 

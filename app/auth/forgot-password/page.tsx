@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
     return (
       <MainLayout showHeader={false} showFooter={false} showBottomNav={false}>
         <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md mobile-card">
             <CardHeader className="text-center space-y-4">
               <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
                 <Button
                   variant="outline"
                   onClick={() => setEmailSent(false)}
-                  className="w-full"
+                  className="w-full touch-target"
                 >
                   別のメールアドレスで試す
                 </Button>
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
   return (
     <MainLayout showHeader={false} showFooter={false} showBottomNav={false}>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md mobile-card">
           <CardHeader className="text-center space-y-2">
             <div className="mx-auto w-12 h-12 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center mb-4">
               <Sparkles className="w-6 h-6 text-white" />
@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handlePasswordReset} className="space-y-4">
+            <form onSubmit={handlePasswordReset} className="mobile-form">
               <div className="space-y-2">
                 <Label htmlFor="email">メールアドレス</Label>
                 <div className="relative">
@@ -134,7 +134,7 @@ export default function ForgotPasswordPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 mobile-input"
                     placeholder="your@example.com"
                     required
                   />
@@ -143,7 +143,7 @@ export default function ForgotPasswordPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="w-full btn-primary touch-target"
                 disabled={loading}
               >
                 {loading ? '送信中...' : 'リセットメールを送信'}

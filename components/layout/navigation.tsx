@@ -186,8 +186,8 @@ export function BottomNavigation({ isPremium }: {
   ]
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-40 shadow-lg">
-      <div className="flex justify-around items-center h-16">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t z-50 shadow-lg safe-area-bottom">
+      <div className="flex justify-around items-center h-16 pb-safe">
         {mobileItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href

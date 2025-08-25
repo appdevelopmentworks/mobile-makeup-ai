@@ -84,21 +84,128 @@
   .mobile-safe-area {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Primary button with mobile optimization */
+  .btn-primary {
+    @apply bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl min-h-[44px];
+  }
+
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Mobile form improvements */
+  .mobile-form {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .mobile-input {
+    @apply text-base; /* Prevents zoom on iOS */
+    min-height: 44px;
+  }
+
+  /* Bottom navigation improvements */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 z-50;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 @layer utilities {
   /* モバイル向けユーティリティクラス */
-  @media (max-width: 640px) {
-    .mobile-container {
-      @apply px-4 py-3;
-    }
-    
-    .mobile-text-sm {
-      @apply text-sm;
-    }
-    
-    .mobile-text-xs {
-      @apply text-xs;
-    }
+  .mobile-container {
+    @apply px-4 py-3;
+  }
+  
+  .mobile-text-sm {
+    @apply text-sm;
+  }
+  
+  .mobile-text-xs {
+    @apply text-xs;
+  }
+
+  /* Responsive visibility utilities */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden sm:block;
+  }
+
+  /* Touch-friendly spacing */
+  .touch-spacing {
+    @apply p-4 sm:p-6;
+  }
+
+  /* Safe area utilities */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Hide scrollbars but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mobile-first responsive design fixes */
+@media (max-width: 640px) {
+  /* Ensure proper tap targets */
+  button, a[role="button"], input[type="submit"], input[type="button"] {
+    min-height: 44px;
+  }
+
+  /* Improve form element sizing */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  /* Better container spacing on mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Optimize modal/dialog sizing */
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+
+  /* Tab navigation improvements for mobile */
+  .tab-list-mobile {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+  }
+
+  .tab-trigger-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 0.25rem;
+    font-size: 0.75rem;
+    min-height: 60px;
+  }
+}
+
+/* Improve touch interactions */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch device styles */
+  .hover\:shadow-lg:hover {
+    box-shadow: var(--tw-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+
+  /* Reduce hover effects on touch devices */
+  .hover\:bg-gray-50:hover {
+    background-color: transparent;
   }
 }

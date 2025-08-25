@@ -95,8 +95,8 @@ export default function LoginPage() {
 
   return (
     <MainLayout>
-      <div className="bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 160px)' }}>
-      <Card className="w-full max-w-md">
+      <div className="bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4 min-h-screen">
+      <Card className="w-full max-w-md mobile-card">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center">
             <Sparkles className="h-8 w-8 text-white" />
@@ -109,7 +109,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleEmailLogin} className="mobile-form">
             <div className="space-y-2">
               <Label htmlFor="email">メールアドレス</Label>
               <div className="relative">
@@ -120,7 +120,7 @@ export default function LoginPage() {
                   placeholder="example@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 mobile-input"
                   required
                 />
               </div>
@@ -136,7 +136,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
+                  className="pl-10 pr-10 mobile-input"
                   required
                 />
                 <Button
@@ -166,7 +166,7 @@ export default function LoginPage() {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+              className="w-full btn-primary touch-target"
               disabled={loading}
             >
               {loading ? 'ログイン中...' : 'ログイン'}

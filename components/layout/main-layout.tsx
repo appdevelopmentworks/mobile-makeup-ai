@@ -40,7 +40,7 @@ export function MainLayout({
         />
       )}
       
-      <main className={`flex-1 ${showBottomNav && isAuthenticated ? 'pb-16 md:pb-0' : ''}`}>
+      <main className={`flex-1 ${showBottomNav && isAuthenticated ? 'pb-20 md:pb-0' : ''}`}>
         {children}
       </main>
       
