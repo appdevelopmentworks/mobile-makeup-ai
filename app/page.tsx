@@ -1,133 +1,245 @@
+'use client'
+
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { Sparkles, Camera, Palette, Zap } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { MainLayout } from '../components/layout'
 
 export default function HomePage() {
   return (
-    <MainLayout className="bg-gradient-to-br">
+    <MainLayout className="bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center space-y-6 mb-16">
-          <h2 className="text-4xl font-bold text-gray-900" style={{fontSize: 'clamp(2rem, 5vw, 4rem)'}}>
-            AIが提案する<br />
-            <span style={{
-              background: 'linear-gradient(to right, #ec4899, #9333ea)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              あなただけのメイク
-            </span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+      <section className="container mx-auto px-4 py-16 lg:py-24">
+        <motion.div 
+          className="text-center space-y-8 mb-20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            <h1 className="text-4xl lg:text-6xl xl:text-7xl font-bold text-gray-900 leading-tight">
+              AIが提案する<br />
+              <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
+                あなただけのメイク
+              </span>
+            </h1>
+          </motion.div>
+          
+          <motion.p 
+            className="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
             顔写真をアップロードするだけで、AIがあなたの顔型や肌色を分析し、
             パーソナライズされたメイク提案を行います。
-          </p>
-          <div className="flex gap-4 justify-center" style={{flexWrap: 'wrap'}}>
-            <Link href="/upload" className="btn-primary">
-              📤 写真をアップロード
-            </Link>
-            <Link href="#features" className="btn-outline">
-              機能を見る
-            </Link>
-          </div>
-        </div>
+          </motion.p>
+          
+          <motion.div 
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
+            <Button asChild size="lg" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+              <Link href="/upload">
+                <Camera className="mr-2 h-5 w-5" />
+                写真をアップロード
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="px-8 py-4 text-lg font-semibold border-2 hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50">
+              <Link href="#features">
+                <Sparkles className="mr-2 h-5 w-5" />
+                機能を見る
+              </Link>
+            </Button>
+          </motion.div>
+        </motion.div>
 
         {/* Features Section */}
-        <section id="features" className="grid gap-8 mb-16" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))'}}>
-          <div className="text-center bg-white rounded-lg shadow-lg p-6">
-            <div className="w-12 h-12 mx-auto bg-pink-100 rounded-lg flex items-center justify-center mb-4">
-              <span style={{fontSize: '24px'}}>📤</span>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">簡単アップロード</h3>
-            <p className="text-gray-600">
-              顔写真を1枚アップロードするだけで分析が始まります
+        <section id="features" className="mb-20">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              3ステップで理想のメイクを発見
+            </h2>
+            <p className="text-lg text-gray-600">
+              シンプルで直感的な操作で、あなたにぴったりのメイクを見つけましょう
             </p>
-          </div>
-
-          <div className="text-center bg-white rounded-lg shadow-lg p-6">
-            <div className="w-12 h-12 mx-auto bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-              <span style={{fontSize: '24px'}}>✨</span>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">AI分析</h3>
-            <p className="text-gray-600">
-              顔型、肌色、パーツを詳細に分析してパーソナライズ提案
-            </p>
-          </div>
-
-          <div className="text-center bg-white rounded-lg shadow-lg p-6">
-            <div className="w-12 h-12 mx-auto bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-              <span style={{fontSize: '24px'}}>🖼️</span>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">ビジュアライゼーション</h3>
-            <p className="text-gray-600">
-              メイク後のあなたをAIが生成してプレビュー表示
-            </p>
+          </motion.div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <Camera className="w-8 h-8" />,
+                title: "簡単アップロード",
+                description: "顔写真を1枚アップロードするだけで分析が始まります",
+                gradient: "from-pink-500 to-rose-500",
+                delay: 0.2
+              },
+              {
+                icon: <Sparkles className="w-8 h-8" />,
+                title: "AI分析",
+                description: "顔型、肌色、パーツを詳細に分析してパーソナライズ提案",
+                gradient: "from-purple-500 to-indigo-500",
+                delay: 0.4
+              },
+              {
+                icon: <Palette className="w-8 h-8" />,
+                title: "ビジュアライゼーション",
+                description: "メイク後のあなたをAIが生成してプレビュー表示",
+                gradient: "from-blue-500 to-cyan-500",
+                delay: 0.6
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: feature.delay, duration: 0.6 }}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="group"
+              >
+                <Card className="h-full bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                  <CardContent className="p-8 text-center">
+                    <motion.div 
+                      className={`w-16 h-16 mx-auto bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg`}
+                      whileHover={{ rotate: 5, scale: 1.1 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      {feature.icon}
+                    </motion.div>
+                    <h3 className="text-xl font-bold mb-4 text-gray-900">{feature.title}</h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </section>
 
         {/* Pricing Section */}
-        <section className="text-center space-y-8">
-          <h3 className="text-3xl font-bold text-gray-900">シンプルな料金プラン</h3>
-          <div className="grid gap-8 max-w-4xl mx-auto" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))'}}>
-            <div className="bg-white border-2 rounded-lg p-6">
-              <div className="mb-6">
-                <h4 className="text-xl font-bold mb-2">無料プラン</h4>
-                <p className="text-gray-600 mb-4">まずはお試しから</p>
-                <div className="text-3xl font-bold">¥0<span className="text-base font-medium">/月</span></div>
-              </div>
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
-                  <span>月3回まで利用可能</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
-                  <span>基本的なメイク提案</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
-                  <span>AIビジュアライゼーション</span>
-                </div>
-              </div>
-              <Link href="/signup" className="w-full block text-center btn-outline">
-                無料で始める
-              </Link>
-            </div>
+        <section className="text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="mb-12"
+          >
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              シンプルな料金プラン
+            </h2>
+            <p className="text-lg text-gray-600">
+              あなたのニーズに合わせてお選びください
+            </p>
+          </motion.div>
+          
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              whileHover={{ y: -5 }}
+            >
+              <Card className="h-full bg-white/80 backdrop-blur-sm border-2 border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
+                <CardContent className="p-8">
+                  <div className="mb-8">
+                    <h3 className="text-2xl font-bold mb-2">無料プラン</h3>
+                    <p className="text-gray-600 mb-6">まずはお試しから</p>
+                    <div className="text-4xl font-bold text-gray-900">
+                      ¥0
+                      <span className="text-lg font-medium text-gray-500">/月</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4 mb-8">
+                    {[
+                      "月3回まで利用可能",
+                      "基本的なメイク提案",
+                      "AIビジュアライゼーション"
+                    ].map((feature, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <Zap className="w-5 h-5 text-green-500" />
+                        <span className="text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Button asChild variant="outline" size="lg" className="w-full">
+                    <Link href="/signup">
+                      無料で始める
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            <div className="bg-white border-2 border-pink-500 rounded-lg p-6 relative">
-              <div className="absolute -top-3 left-1/2 transform bg-pink-500 text-white px-4 py-1 rounded-full" style={{fontSize: '14px'}}>
-                おすすめ
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              whileHover={{ y: -5 }}
+              className="relative"
+            >
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                <span className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
+                  おすすめ
+                </span>
               </div>
-              <div className="mb-6">
-                <h4 className="text-xl font-bold mb-2">プレミアムプラン</h4>
-                <p className="text-gray-600 mb-4">制限なしで使い放題</p>
-                <div className="text-3xl font-bold">¥3,000<span className="text-base font-medium">/月</span></div>
-              </div>
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
-                  <span>無制限利用</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
-                  <span>高度なメイク提案</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
-                  <span>複数パターン生成</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
-                  <span>優先サポート</span>
-                </div>
-              </div>
-              <Link href="/signup?plan=premium" className="w-full block text-center btn-primary">
-                今すぐ始める
-              </Link>
-            </div>
+              
+              <Card className="h-full bg-gradient-to-br from-pink-50 to-purple-50 border-2 border-pink-300 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                <CardContent className="p-8">
+                  <div className="mb-8">
+                    <h3 className="text-2xl font-bold mb-2 text-gray-900">プレミアムプラン</h3>
+                    <p className="text-gray-600 mb-6">制限なしで使い放題</p>
+                    <div className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                      ¥3,000
+                      <span className="text-lg font-medium text-gray-500">/月</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4 mb-8">
+                    {[
+                      "無制限利用",
+                      "高度なメイク提案",
+                      "複数パターン生成",
+                      "優先サポート"
+                    ].map((feature, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <Zap className="w-5 h-5 text-pink-500" />
+                        <span className="text-gray-700 font-medium">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Button asChild size="lg" className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+                    <Link href="/signup?plan=premium">
+                      今すぐ始める
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </section>
-      </div>
+      </section>
     </MainLayout>
   )
 }
