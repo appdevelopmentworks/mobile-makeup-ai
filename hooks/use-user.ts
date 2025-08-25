@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 interface UserProfile {
   id: string
@@ -47,6 +47,11 @@ export function useUser(): UseUserReturn {
   }
 
   const refetch = async () => {
+    if (!isSupabaseConfigured) {
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -71,6 +76,11 @@ export function useUser(): UseUserReturn {
   }
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false)
+      return
+    }
+
     // Initial fetch
     refetch()
 

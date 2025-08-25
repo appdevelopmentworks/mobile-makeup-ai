@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { AuthError, User } from '@supabase/supabase-js'
 
 export interface SignUpData {
@@ -19,6 +19,13 @@ export interface AuthResult {
 
 // Sign up with email and password
 export async function signUp(data: SignUpData): Promise<AuthResult> {
+  if (!isSupabaseConfigured) {
+    return {
+      user: null,
+      error: { message: 'Authentication is not configured', name: 'ConfigError', status: 400 } as AuthError
+    }
+  }
+
   const { email, password, name } = data
   
   const { data: authData, error } = await supabase.auth.signUp({
@@ -40,6 +47,13 @@ export async function signUp(data: SignUpData): Promise<AuthResult> {
 
 // Sign in with email and password
 export async function signIn(data: SignInData): Promise<AuthResult> {
+  if (!isSupabaseConfigured) {
+    return {
+      user: null,
+      error: { message: 'Authentication is not configured', name: 'ConfigError', status: 400 } as AuthError
+    }
+  }
+
   const { email, password } = data
 
   const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -55,6 +69,10 @@ export async function signIn(data: SignInData): Promise<AuthResult> {
 
 // Sign in with Google OAuth
 export async function signInWithGoogle() {
+  if (!isSupabaseConfigured) {
+    return { error: { message: 'Authentication is not configured', name: 'ConfigError', status: 400 } as AuthError }
+  }
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -67,18 +85,30 @@ export async function signInWithGoogle() {
 
 // Sign out
 export async function signOut() {
+  if (!isSupabaseConfigured) {
+    return { error: null }
+  }
+
   const { error } = await supabase.auth.signOut()
   return { error }
 }
 
 // Get current user
 export async function getCurrentUser() {
+  if (!isSupabaseConfigured) {
+    return { user: null, error: null }
+  }
+
   const { data: { user }, error } = await supabase.auth.getUser()
   return { user, error }
 }
 
 // Send password reset email
 export async function resetPassword(email: string) {
+  if (!isSupabaseConfigured) {
+    return { error: { message: 'Authentication is not configured', name: 'ConfigError', status: 400 } as AuthError }
+  }
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/auth/reset-password`
   })
@@ -88,6 +118,10 @@ export async function resetPassword(email: string) {
 
 // Update user password
 export async function updatePassword(password: string) {
+  if (!isSupabaseConfigured) {
+    return { error: { message: 'Authentication is not configured', name: 'ConfigError', status: 400 } as AuthError }
+  }
+
   const { error } = await supabase.auth.updateUser({
     password
   })
@@ -97,6 +131,10 @@ export async function updatePassword(password: string) {
 
 // Update user profile
 export async function updateProfile(updates: { name?: string; avatar_url?: string }) {
+  if (!isSupabaseConfigured) {
+    return { error: { message: 'Authentication is not configured', name: 'ConfigError', status: 400 } as AuthError }
+  }
+
   const { error } = await supabase.auth.updateUser({
     data: updates
   })

@@ -18,7 +18,9 @@
       "Bash(yarn install)",
       "Bash(next dev)",
       "Bash(curl:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": [],
