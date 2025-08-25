@@ -48,7 +48,6 @@ export function MainLayout({
       
       {showBottomNav && isAuthenticated && (
         <BottomNavigation 
-          isAuthenticated={isAuthenticated}
           isPremium={isPremium}
         />
       )}

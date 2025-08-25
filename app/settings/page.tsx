@@ -111,7 +111,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(mockUserSettings)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { user, loading } = useAuth()
+  const { loading } = useAuth()
   const { toast } = useToast()
 
   const updateSettings = <T extends keyof UserSettings>(

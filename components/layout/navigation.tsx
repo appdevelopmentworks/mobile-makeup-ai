@@ -7,7 +7,7 @@ import {
   Camera, 
   History, 
   Settings, 
-  User, 
+ 
   BarChart3, 
   Palette,
   Crown,
@@ -152,8 +152,7 @@ export function SidebarNavigation({ isAuthenticated, isPremium }: {
 }
 
 // ボトムナビゲーション（モバイル用）
-export function BottomNavigation({ isAuthenticated, isPremium }: { 
-  isAuthenticated?: boolean
+export function BottomNavigation({ isPremium }: { 
   isPremium?: boolean 
 }) {
   const pathname = usePathname()

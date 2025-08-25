@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Button } from '../ui/button'
 import { Menu, X, Sparkles, User, Settings, LogOut } from 'lucide-react'
 
 interface HeaderProps {
@@ -16,7 +15,7 @@ interface HeaderProps {
   }
 }
 
-export function Header({ isAuthenticated = false, user }: HeaderProps) {
+export function Header({ isAuthenticated = false }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
 

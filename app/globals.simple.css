@@ -97,7 +97,7 @@ body {
 .relative { position: relative; }
 .absolute { position: absolute; }
 .-top-3 { top: -12px; }
-.left-1/2 { left: 50%; }
+.left-half { left: 50%; }
 .transform { transform: translateX(-50%); }
 
 .block { display: block; }

@@ -58,20 +58,6 @@ export function HistoryItemComponent({
     })
   }
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `MakeupAI分析結果 - ${item.styleName}`,
-        text: `${item.faceShape}・${item.skinTone}の分析結果`,
-      })
-    } else {
-      navigator.clipboard.writeText(window.location.href)
-      toast({
-        title: 'リンクをコピーしました',
-        description: 'URLがクリップボードにコピーされました。',
-      })
-    }
-  }
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer">

@@ -19,7 +19,6 @@ import {
   Sparkles,
   Crown,
   Star,
-  Download,
   Heart
 } from 'lucide-react'
 import { useToast } from '../../../hooks/use-toast'
@@ -31,7 +30,7 @@ export default function AnalysisResultsPage() {
   const [originalImage, setOriginalImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
-  const { user } = useAuth()
+  const { user: _user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -237,7 +236,7 @@ export default function AnalysisResultsPage() {
           {/* Right Column */}
           <div className="space-y-6">
             <AIImageGenerator 
-              originalImage={originalImage}
+              originalImage={originalImage || undefined}
               analysisData={{
                 faceShape: analysisData.faceShape.type,
                 skinTone: analysisData.skinTone.type,

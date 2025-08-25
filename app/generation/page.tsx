@@ -50,7 +50,7 @@ export default function GenerationPage() {
       skinTone: false
     }
   })
-  const { user, loading } = useAuth()
+  const { user: _user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()

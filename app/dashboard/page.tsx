@@ -3,7 +3,7 @@
 import { useAuth } from '@/components/providers/auth-provider'
 import { MainLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Upload, Sparkles, History, Settings, Star, TrendingUp, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
@@ -25,7 +25,12 @@ export default function DashboardPage() {
     <MainLayout 
       isAuthenticated={true}
       isPremium={false}
-      user={user}
+      user={user ? {
+        id: user.id,
+        name: user.user_metadata?.name,
+        email: user.email || '',
+        avatar: user.user_metadata?.avatar_url
+      } : undefined}
       showFooter={false}
       className="bg-gradient-to-br from-pink-50 via-white to-purple-50"
     >
