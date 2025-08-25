@@ -1,18 +1,16 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Card, CardContent, Badge } from '@/components/ui'
+import { Card, CardContent } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/components/providers/auth-provider'
+import { UsageDisplay } from '@/components/usage/usage-display'
 import { Camera, History, Settings, Sparkles, TrendingUp, Crown } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const [usageCount] = useState(1)
-  const maxFreeUsage = 3
 
   return (
     <MainLayout 
@@ -57,35 +55,11 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-5">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">今月の利用状況</h3>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                        {usageCount}
-                      </span>
-                      <span className="text-lg text-gray-400">/ {maxFreeUsage}</span>
-                      <span className="text-sm text-gray-500 ml-1">回</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">利用回数</p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="outline" className="mb-3 border-pink-200 text-pink-700">
-                      無料プラン
-                    </Badge>
-                    <br />
-                    <Link 
-                      href="/pricing"
-                      className="text-xs text-pink-600 hover:text-pink-700 font-medium hover:underline transition-colors"
-                    >
-                      アップグレード →
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <UsageDisplay
+              userId={user?.id}
+              onUpgradeClick={() => window.location.href = '/pricing'}
+              compact={false}
+            />
           </motion.div>
 
           {/* Main Action */}

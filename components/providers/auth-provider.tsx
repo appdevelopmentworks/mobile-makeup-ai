@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   error: AuthError | null
   signOut: () => Promise<void>
+  mockSignIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -22,20 +23,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<AuthError | null>(null)
 
   useEffect(() => {
-    // If Supabase is not configured, use mock data
-    if (!isSupabaseConfigured) {
-      const mockUser: User = {
-        id: 'mock-user-id',
-        email: 'user@example.com',
-        user_metadata: { name: 'テストユーザー' },
-        app_metadata: {},
-        aud: 'authenticated',
-        created_at: '2024-01-01T00:00:00.000Z',
-        role: 'authenticated',
-        updated_at: '2024-01-01T00:00:00.000Z'
-      } as User
+    // Check for existing session in localStorage first
+    const checkStoredSession = () => {
+      try {
+        const storedUser = localStorage.getItem('mockUser')
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
+          setLoading(false)
+          return true
+        }
+      } catch (error) {
+        console.log('No stored session found')
+      }
+      return false
+    }
 
-      setUser(mockUser)
+    // If there's a stored session, use it
+    if (checkStoredSession()) {
+      return
+    }
+
+    // If Supabase is not configured, don't auto-login but allow manual login
+    if (!isSupabaseConfigured) {
       setLoading(false)
       return
     }
@@ -88,6 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     try {
       setLoading(true)
+      
+      // Clear localStorage session first
+      localStorage.removeItem('mockUser')
+      
       const { error } = await authSignOut()
       
       if (error) {
@@ -105,12 +118,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const mockSignIn = async (email: string, password: string) => {
+    try {
+      setLoading(true)
+      
+      // Simple mock authentication - accept any email/password for testing
+      if (email && password) {
+        const mockUser: User = {
+          id: 'mock-user-' + Date.now(),
+          email: email,
+          user_metadata: { name: email.split('@')[0] },
+          app_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          role: 'authenticated',
+          updated_at: new Date().toISOString()
+        } as User
+
+        // Store in localStorage for persistence
+        localStorage.setItem('mockUser', JSON.stringify(mockUser))
+        
+        setUser(mockUser)
+        setError(null)
+        
+        return { success: true }
+      } else {
+        return { success: false, error: 'メールアドレスとパスワードを入力してください' }
+      }
+    } catch (err) {
+      console.error('Mock sign in error:', err)
+      return { success: false, error: 'ログインに失敗しました' }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const value = {
     user,
     session,
     loading,
     error,
     signOut: handleSignOut,
+    mockSignIn,
   }
 
   return (

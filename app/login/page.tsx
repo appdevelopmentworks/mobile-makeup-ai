@@ -12,6 +12,7 @@ import { Sparkles, Mail, Lock, Eye, EyeOff, Chrome } from 'lucide-react'
 import { signIn, signInWithGoogle } from '@/lib/auth'
 import { useToast } from '../../hooks/use-toast'
 import { MainLayout } from '../../components/layout'
+import { useAuth } from '@/components/providers/auth-provider'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
   const errorParam = searchParams.get('error')
   const { toast } = useToast()
+  const { mockSignIn } = useAuth()
 
   // Show error message from URL parameters (e.g., from OAuth callback)
   useEffect(() => {
@@ -40,13 +42,26 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      // Try mock authentication first
+      const mockResult = await mockSignIn(email, password)
+      
+      if (mockResult.success) {
+        toast({
+          title: 'ログイン成功',
+          description: 'ダッシュボードに移動します',
+        })
+        router.push(redirectTo)
+        return
+      }
+
+      // If mock fails, try real Supabase authentication
       const { user, error } = await signIn({ email, password })
 
       if (error) {
         toast({
           variant: 'destructive',
           title: 'ログインエラー',
-          description: error.message,
+          description: mockResult.error || error.message,
         })
         return
       }

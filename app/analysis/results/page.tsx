@@ -22,35 +22,95 @@ import {
   Heart
 } from 'lucide-react'
 import { useToast } from '../../../hooks/use-toast'
-import { mockAnalysisResult } from '@/types/analysis'
 import type { AnalysisResult } from '@/types/analysis'
+import { FaceAnalysisResult } from '@/lib/face-analysis'
+import { makeupEngine, MakeupPlan } from '@/lib/makeup-suggestions'
+import { UsageTracker } from '@/lib/usage-tracking'
 
 export default function AnalysisResultsPage() {
   const [analysisData, setAnalysisData] = useState<AnalysisResult | null>(null)
-  const [originalImage, setOriginalImage] = useState<string | null>(null)
+  const [makeupPlan, setMakeupPlan] = useState<MakeupPlan | null>(null)
+  const [originalImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
-  const { user: _user } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
     // Get analysis data from sessionStorage (from upload page)
-    const storedData = sessionStorage.getItem('analysisData')
+    const storedFaceAnalysis = sessionStorage.getItem('faceAnalysisResult')
+    const storedRegion = sessionStorage.getItem('selectedRegion')
     
-    if (storedData) {
+    if (storedFaceAnalysis) {
       try {
-        const parsed = JSON.parse(storedData)
-        setOriginalImage(parsed.imageData)
+        const faceAnalysis: FaceAnalysisResult = JSON.parse(storedFaceAnalysis)
+        const region = storedRegion || 'japan'
         
-        // Use mock data for now (in real implementation, this would come from API)
-        setAnalysisData(mockAnalysisResult)
+        // Generate makeup suggestions based on face analysis
+        const plan = makeupEngine.generateSuggestions(faceAnalysis, region, {
+          style: 'natural',
+          occasion: 'daily'
+        })
+        
+        setMakeupPlan(plan)
+        
+        // Convert to legacy format for existing components
+        setAnalysisData({
+          id: 'current-analysis',
+          userId: 'current-user',
+          confidence: faceAnalysis.confidence,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          faceShape: {
+            type: faceAnalysis.faceShape || 'oval',
+            confidence: faceAnalysis.confidence,
+            description: faceAnalysis.faceShape === 'oval' ? '卵型の顔型' : 
+                        faceAnalysis.faceShape === 'round' ? '丸型の顔型' : 
+                        faceAnalysis.faceShape === 'square' ? '四角型の顔型' :
+                        faceAnalysis.faceShape === 'heart' ? 'ハート型の顔型' : '面長型の顔型'
+          },
+          skinTone: {
+            type: faceAnalysis.skinTone === 'light' ? 'spring' :
+                  faceAnalysis.skinTone === 'dark' ? 'winter' : 
+                  faceAnalysis.skinTone === 'deep' ? 'autumn' : 'summer',
+            undertone: 'neutral',
+            description: faceAnalysis.skinTone === 'light' ? '明るい肌色' :
+                        faceAnalysis.skinTone === 'medium' ? '標準的な肌色' :
+                        faceAnalysis.skinTone === 'dark' ? '濃い肌色' : '深い肌色',
+            recommendedColors: ['ベージュ', 'ピンク', 'コーラル']
+          },
+          recommendations: plan.suggestions.map(s => ({
+            category: s.category === 'foundation' ? 'base' : 
+                     s.category === 'brows' ? 'eyebrows' : s.category,
+            title: s.title,
+            description: s.description,
+            products: s.products.map(p => p.name),
+            techniques: s.steps,
+            colors: ['ナチュラル', 'ピンク', 'ブラウン']
+          })),
+          selectedStyle: 'natural',
+          imageUrl: '/placeholder-face.jpg',
+          features: {
+            eyeShape: 'almond',
+            eyeSize: 'medium',
+            eyebrowShape: 'soft-arch',
+            lipShape: 'full',
+            noseShape: 'straight'
+          }
+        })
+        
+        toast({
+          title: '分析完了！',
+          description: `${plan.suggestions.length}個のメイク提案を生成しました`,
+        })
+        
       } catch (error) {
-        console.error('Error parsing analysis data:', error)
+        console.error('Error processing analysis data:', error)
         toast({
           variant: 'destructive',
           title: 'データエラー',
-          description: '分析データの読み込みに失敗しました。',
+          description: '分析データの処理に失敗しました。',
         })
         router.push('/upload')
         return
@@ -242,7 +302,8 @@ export default function AnalysisResultsPage() {
                 skinTone: analysisData.skinTone.type,
                 selectedStyle: analysisData.selectedStyle
               }}
-              isPremium={false} // Set to true for premium users
+              isPremium={user ? UsageTracker.getCurrentUserPlan(user.id).type === 'premium' : false}
+              userId={user?.id}
             />
             
             {/* Overall Score */}
@@ -272,7 +333,164 @@ export default function AnalysisResultsPage() {
           </div>
         </div>
 
-        {/* Full Width Recommendations */}
+        {/* Makeup Plan Details */}
+        {makeupPlan && (
+          <div className="mt-8 space-y-6">
+            {/* Overall Style */}
+            <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-pink-500" />
+                  {makeupPlan.overall.style}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 mb-4">{makeupPlan.overall.description}</p>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-white/50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">所要時間</p>
+                    <p className="font-semibold text-pink-600">{makeupPlan.totalTime}</p>
+                  </div>
+                  <div className="bg-white/50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">難易度</p>
+                    <p className="font-semibold text-purple-600">
+                      {makeupPlan.difficulty === 'beginner' ? '初級' :
+                       makeupPlan.difficulty === 'intermediate' ? '中級' : '上級'}
+                    </p>
+                  </div>
+                  <div className="bg-white/50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">適合度</p>
+                    <p className="font-semibold text-green-600">
+                      {Math.round(makeupPlan.overall.suitability * 100)}%
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Color Palette */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  🎨 推奨カラーパレット
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div 
+                      className="w-12 h-12 rounded-full mx-auto mb-2 border-2 border-gray-200"
+                      style={{ backgroundColor: makeupPlan.colorPalette.foundation }}
+                    ></div>
+                    <p className="text-sm font-medium">ファンデーション</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex gap-1 justify-center mb-2">
+                      {makeupPlan.colorPalette.eyeshadow.map((color, index) => (
+                        <div
+                          key={index}
+                          className="w-6 h-6 rounded-full border border-gray-200"
+                          style={{ backgroundColor: color }}
+                        ></div>
+                      ))}
+                    </div>
+                    <p className="text-sm font-medium">アイシャドウ</p>
+                  </div>
+                  <div className="text-center">
+                    <div 
+                      className="w-12 h-12 rounded-full mx-auto mb-2 border-2 border-gray-200"
+                      style={{ backgroundColor: makeupPlan.colorPalette.lipstick }}
+                    ></div>
+                    <p className="text-sm font-medium">リップ</p>
+                  </div>
+                  <div className="text-center">
+                    <div 
+                      className="w-12 h-12 rounded-full mx-auto mb-2 border-2 border-gray-200"
+                      style={{ backgroundColor: makeupPlan.colorPalette.blush }}
+                    ></div>
+                    <p className="text-sm font-medium">チーク</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Detailed Suggestions */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {makeupPlan.suggestions.map((suggestion) => (
+                <Card key={suggestion.id} className="overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{suggestion.title}</CardTitle>
+                      <Badge variant={
+                        suggestion.difficulty === 'beginner' ? 'secondary' :
+                        suggestion.difficulty === 'intermediate' ? 'default' : 'destructive'
+                      }>
+                        {suggestion.difficulty === 'beginner' ? '初級' :
+                         suggestion.difficulty === 'intermediate' ? '中級' : '上級'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600">{suggestion.description}</p>
+                    <p className="text-xs text-gray-500">所要時間: {suggestion.timeEstimate}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Products */}
+                    <div>
+                      <h4 className="font-medium text-sm mb-2">おすすめ商品</h4>
+                      <div className="space-y-2">
+                        {suggestion.products.map((product) => (
+                          <div key={product.id} className="bg-gray-50 p-3 rounded-lg">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium text-sm">{product.name}</p>
+                                <p className="text-xs text-gray-600">{product.brand}</p>
+                                {product.shade && (
+                                  <p className="text-xs text-purple-600">{product.shade}</p>
+                                )}
+                              </div>
+                              {product.price && (
+                                <p className="text-sm font-medium">¥{product.price.toLocaleString()}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Steps */}
+                    <div>
+                      <h4 className="font-medium text-sm mb-2">手順</h4>
+                      <ol className="space-y-1">
+                        {suggestion.steps.map((step, index) => (
+                          <li key={index} className="text-xs text-gray-700 flex gap-2">
+                            <span className="bg-pink-100 text-pink-600 rounded-full w-4 h-4 flex items-center justify-center text-xs flex-shrink-0">
+                              {index + 1}
+                            </span>
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    {/* Tips */}
+                    <div>
+                      <h4 className="font-medium text-sm mb-2">💡 コツ</h4>
+                      <ul className="space-y-1">
+                        {suggestion.tips.map((tip, index) => (
+                          <li key={index} className="text-xs text-gray-600 flex gap-2">
+                            <span className="text-yellow-500">•</span>
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Full Width Recommendations (Legacy) */}
         <div className="mt-8">
           <MakeupRecommendations recommendations={analysisData.recommendations} />
         </div>

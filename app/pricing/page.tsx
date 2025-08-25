@@ -7,6 +7,7 @@ import { useAuth } from '@/components/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { PlanManagement } from '@/components/usage/plan-management'
 import { 
   ArrowLeft, 
   Check, 
@@ -19,6 +20,7 @@ import {
   Gift
 } from 'lucide-react'
 import { useToast } from '../../hooks/use-toast'
+import { stripeService, StripeService } from '@/lib/stripe'
 
 interface PlanFeature {
   text: string
@@ -37,44 +39,22 @@ interface PricingPlan {
   discount?: string
 }
 
-const pricingPlans: PricingPlan[] = [
-  {
-    id: 'free',
-    name: '無料プラン',
-    description: 'まずはお試しから',
-    price: 0,
-    currency: '¥',
-    period: '月',
-    features: [
-      { text: '月3回まで分析可能', included: true },
-      { text: '基本的なメイク提案', included: true },
-      { text: 'AI画像生成', included: true },
-      { text: '履歴保存（30日間）', included: true },
-      { text: '最新トレンド情報', included: false },
-      { text: '広告非表示', included: false },
-      { text: '優先サポート', included: false },
-    ]
-  },
-  {
-    id: 'premium',
-    name: 'プレミアムプラン',
-    description: '制限なしで使い放題',
-    price: 3000,
-    currency: '¥',
-    period: '月',
-    recommended: true,
-    discount: '今なら初月50%OFF！',
-    features: [
-      { text: '無制限の分析', included: true },
-      { text: 'プロのメイクアドバイス', included: true },
-      { text: '高画質AI画像生成', included: true },
-      { text: '履歴永久保存', included: true },
-      { text: '最新トレンド情報', included: true },
-      { text: '広告非表示', included: true },
-      { text: '優先サポート', included: true },
-    ]
-  }
-]
+const pricingPlans: PricingPlan[] = StripeService.PLANS.map(stripePlan => ({
+  id: stripePlan.id,
+  name: stripePlan.name,
+  description: stripePlan.id === 'free' ? 'まずはお試しから' : 
+               stripePlan.id === 'premium' ? '制限なしで使い放題' : 
+               'お得な年間プラン',
+  price: stripePlan.price,
+  currency: '¥',
+  period: stripePlan.interval === 'month' ? '月' : '年',
+  recommended: stripePlan.popular,
+  discount: stripePlan.id === 'premium' ? '今なら初月50%OFF！' : undefined,
+  features: stripePlan.features.map(feature => ({
+    text: feature,
+    included: true
+  }))
+}))
 
 export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>('')
@@ -93,25 +73,48 @@ export default function PricingPage() {
       return
     }
 
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'ログインが必要です',
+        description: 'プランを選択するにはログインしてください。',
+      })
+      router.push('/login')
+      return
+    }
+
     setSelectedPlan(planId)
     setProcessing(true)
 
     try {
-      // TODO: Implement payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast({
-        title: 'プランを選択しました',
-        description: 'アップグレード処理を開始します。',
-      })
+      const plan = StripeService.getPlanById(planId)
+      if (!plan || !plan.stripePriceId) {
+        throw new Error('プランが見つかりません')
+      }
 
-      // Redirect to payment page (to be implemented)
-      router.push('/checkout?plan=' + planId)
+      const successUrl = `${window.location.origin}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`
+      const cancelUrl = `${window.location.origin}/pricing?canceled=true`
+
+      const session = await stripeService.createPaymentSession(
+        plan.stripePriceId,
+        user.id,
+        successUrl,
+        cancelUrl
+      )
+
+      if (session.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = session.url
+      } else {
+        throw new Error('決済セッションの作成に失敗しました')
+      }
+
     } catch (error) {
+      console.error('Payment session error:', error)
       toast({
         variant: 'destructive',
         title: 'エラー',
-        description: 'プランの選択に失敗しました。',
+        description: error instanceof Error ? error.message : 'プランの選択に失敗しました。',
       })
     } finally {
       setProcessing(false)
@@ -287,6 +290,14 @@ export default function PricingPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Plan Management */}
+        {user && (
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">プラン管理</h3>
+            <PlanManagement userId={user.id} />
+          </div>
+        )}
 
         {/* Trust Indicators */}
         <div className="grid md:grid-cols-3 gap-6 text-center">

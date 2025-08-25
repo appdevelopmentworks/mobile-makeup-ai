@@ -1,0 +1,315 @@
+// Stripe payment integration
+export interface PricingPlan {
+  id: string
+  name: string
+  price: number
+  interval: 'month' | 'year'
+  currency: string
+  features: string[]
+  stripePriceId?: string
+  popular?: boolean
+}
+
+export interface PaymentSession {
+  id: string
+  url: string
+  status: 'open' | 'complete' | 'expired'
+}
+
+export interface SubscriptionStatus {
+  active: boolean
+  planId: string
+  currentPeriodEnd: string
+  cancelAtPeriodEnd: boolean
+  status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid'
+}
+
+export class StripeService {
+  private publishableKey: string | null
+  private secretKey: string | null
+  private baseUrl = 'https://api.stripe.com/v1'
+
+  constructor() {
+    this.publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null
+    this.secretKey = process.env.STRIPE_SECRET_KEY || null
+  }
+
+  // Available pricing plans
+  static readonly PLANS: PricingPlan[] = [
+    {
+      id: 'free',
+      name: 'フリープラン',
+      price: 0,
+      interval: 'month',
+      currency: 'JPY',
+      features: [
+        '月3回まで顔分析',
+        'メイク提案機能',
+        '基本的な顔型・肌色分析',
+        'メイクアドバイス',
+      ]
+    },
+    {
+      id: 'premium',
+      name: 'プレミアムプラン',
+      price: 980,
+      interval: 'month',
+      currency: 'JPY',
+      stripePriceId: 'price_premium_monthly', // Set in Stripe dashboard
+      popular: true,
+      features: [
+        '無制限の顔分析',
+        'AI画像生成機能',
+        '詳細な顔分析レポート',
+        '高品質画像ダウンロード',
+        '複数スタイル提案',
+        'メイク履歴の保存',
+        'プライオリティサポート',
+      ]
+    },
+    {
+      id: 'premium-yearly',
+      name: 'プレミアム年間プラン',
+      price: 9800, // 2 months free
+      interval: 'year',
+      currency: 'JPY',
+      stripePriceId: 'price_premium_yearly', // Set in Stripe dashboard
+      features: [
+        '無制限の顔分析',
+        'AI画像生成機能',
+        '詳細な顔分析レポート',
+        '高品質画像ダウンロード',
+        '複数スタイル提案',
+        'メイク履歴の保存',
+        'プライオリティサポート',
+        '年間プラン特典',
+      ]
+    }
+  ]
+
+  async createPaymentSession(
+    priceId: string,
+    userId: string,
+    successUrl: string,
+    cancelUrl: string
+  ): Promise<PaymentSession> {
+    if (!this.secretKey) {
+      // Return mock session for development
+      return this.createMockSession()
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/checkout/sessions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          'mode': 'subscription',
+          'line_items[0][price]': priceId,
+          'line_items[0][quantity]': '1',
+          'success_url': successUrl,
+          'cancel_url': cancelUrl,
+          'client_reference_id': userId,
+          'locale': 'ja',
+          'billing_address_collection': 'required',
+          'payment_method_types[0]': 'card',
+          'metadata[user_id]': userId,
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Stripe API error: ${response.statusText}`)
+      }
+
+      const session = await response.json()
+      
+      return {
+        id: session.id,
+        url: session.url,
+        status: session.status
+      }
+
+    } catch (error) {
+      console.error('Stripe session creation error:', error)
+      throw new Error('決済セッションの作成に失敗しました')
+    }
+  }
+
+  async getSubscriptionStatus(userId: string): Promise<SubscriptionStatus | null> {
+    if (!this.secretKey) {
+      // Return mock status for development
+      return this.getMockSubscriptionStatus(userId)
+    }
+
+    try {
+      // In a real implementation, you would:
+      // 1. Get customer ID from your database using userId
+      // 2. Fetch subscriptions from Stripe API
+      // 3. Return the active subscription status
+      
+      const response = await fetch(`${this.baseUrl}/customers?email=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${this.secretKey}`,
+        }
+      })
+
+      if (!response.ok) {
+        return null
+      }
+
+      const customers = await response.json()
+      
+      if (customers.data.length === 0) {
+        return null
+      }
+
+      const customer = customers.data[0]
+      
+      const subscriptionsResponse = await fetch(`${this.baseUrl}/subscriptions?customer=${customer.id}&status=active`, {
+        headers: {
+          'Authorization': `Bearer ${this.secretKey}`,
+        }
+      })
+
+      if (!subscriptionsResponse.ok) {
+        return null
+      }
+
+      const subscriptions = await subscriptionsResponse.json()
+      
+      if (subscriptions.data.length === 0) {
+        return null
+      }
+
+      const subscription = subscriptions.data[0]
+      
+      return {
+        active: subscription.status === 'active',
+        planId: this.getPlanIdFromStripePrice(subscription.items.data[0].price.id),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        status: subscription.status
+      }
+
+    } catch (error) {
+      console.error('Subscription status error:', error)
+      return null
+    }
+  }
+
+  async cancelSubscription(subscriptionId: string): Promise<boolean> {
+    if (!this.secretKey) {
+      // Mock cancellation success
+      return true
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/subscriptions/${subscriptionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.secretKey}`,
+        }
+      })
+
+      return response.ok
+
+    } catch (error) {
+      console.error('Subscription cancellation error:', error)
+      return false
+    }
+  }
+
+  async createCustomerPortalSession(customerId: string, returnUrl: string): Promise<{ url: string } | null> {
+    if (!this.secretKey) {
+      // Mock portal URL for development
+      return { url: '/settings?portal=mock' }
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/billing_portal/sessions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          'customer': customerId,
+          'return_url': returnUrl,
+        })
+      })
+
+      if (!response.ok) {
+        return null
+      }
+
+      const session = await response.json()
+      return { url: session.url }
+
+    } catch (error) {
+      console.error('Customer portal error:', error)
+      return null
+    }
+  }
+
+  private createMockSession(): PaymentSession {
+    return {
+      id: 'cs_mock_' + Date.now(),
+      url: '/pricing?success=mock',
+      status: 'open'
+    }
+  }
+
+  private getMockSubscriptionStatus(userId: string): SubscriptionStatus | null {
+    // Mock: check if user has premium plan in localStorage
+    try {
+      const plan = localStorage.getItem(`makeup_ai_usage_${userId}`)
+      if (plan) {
+        const planData = JSON.parse(plan)
+        if (planData.type === 'premium') {
+          return {
+            active: true,
+            planId: 'premium',
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            cancelAtPeriodEnd: false,
+            status: 'active'
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Mock subscription status error:', error)
+    }
+    
+    return null
+  }
+
+  private getPlanIdFromStripePrice(stripePriceId: string): string {
+    const plan = StripeService.PLANS.find(p => p.stripePriceId === stripePriceId)
+    return plan?.id || 'premium'
+  }
+
+  // Utility methods
+  static getPlanById(planId: string): PricingPlan | null {
+    return this.PLANS.find(plan => plan.id === planId) || null
+  }
+
+  static formatPrice(price: number, currency: string = 'JPY'): string {
+    return new Intl.NumberFormat('ja-JP', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+    }).format(price)
+  }
+
+  isConfigured(): boolean {
+    return !!(this.publishableKey && this.secretKey)
+  }
+
+  getPublishableKey(): string | null {
+    return this.publishableKey
+  }
+}
+
+// Singleton instance
+export const stripeService = new StripeService()

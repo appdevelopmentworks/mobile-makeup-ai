@@ -15,6 +15,8 @@ import {
   Lock
 } from 'lucide-react'
 import { useToast } from '../../hooks/use-toast'
+import { aiImageGenerator, ImageGenerationRequest, GenerationProgress } from '@/lib/ai-image-generation'
+import { UsageTracker } from '@/lib/usage-tracking'
 
 interface AIImageGeneratorProps {
   originalImage?: string
@@ -24,12 +26,14 @@ interface AIImageGeneratorProps {
     selectedStyle: string
   }
   isPremium?: boolean
+  userId?: string
 }
 
 export function AIImageGenerator({ 
   originalImage, 
   analysisData, 
-  isPremium = false 
+  isPremium = false,
+  userId
 }: AIImageGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -37,11 +41,13 @@ export function AIImageGenerator({
   const { toast } = useToast()
 
   const handleGenerateImage = async () => {
-    if (!isPremium) {
+    // Check usage limits first
+    const canUse = UsageTracker.canUseFeature('ai_generation', userId)
+    if (!canUse.allowed) {
       toast({
         variant: 'destructive',
-        title: 'プレミアム機能',
-        description: 'AI画像生成はプレミアムプランでご利用いただけます。',
+        title: 'AI画像生成制限',
+        description: canUse.reason,
       })
       return
     }
@@ -50,31 +56,35 @@ export function AIImageGenerator({
     setProgress(0)
 
     try {
-      // Simulate AI image generation process
-      const stages = [
-        { progress: 20, message: '画像を解析中...' },
-        { progress: 40, message: 'メイクスタイルを適用中...' },
-        { progress: 60, message: 'AI画像を生成中...' },
-        { progress: 80, message: '最終調整中...' },
-        { progress: 100, message: '完了！' }
-      ]
+      const request: ImageGenerationRequest = {
+        originalImage: originalImage,
+        faceShape: analysisData.faceShape,
+        skinTone: analysisData.skinTone,
+        makeupStyle: analysisData.selectedStyle as 'natural' | 'glamour' | 'cute' | 'mature',
+        region: 'japan' // Could be made dynamic based on user settings
+      }
 
-      for (const stage of stages) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setProgress(stage.progress)
-        
+      const onProgress = (progressData: GenerationProgress) => {
+        setProgress(progressData.progress)
         toast({
-          title: stage.message,
+          title: progressData.message,
           duration: 1000,
         })
       }
 
-      // Set a placeholder generated image (in real implementation, this would come from AI service)
-      setGeneratedImage('/placeholder-generated-makeup.jpg')
+      // Record usage before generation
+      const usageRecorded = UsageTracker.recordUsage('ai_generation', userId)
+      if (!usageRecorded) {
+        throw new Error('Usage recording failed')
+      }
+
+      const result = await aiImageGenerator.generateMakeupImage(request, onProgress)
+      
+      setGeneratedImage(result.generatedImage)
 
       toast({
         title: 'AI画像生成完了',
-        description: 'メイク後のイメージが生成されました！',
+        description: `メイク後のイメージが生成されました！（処理時間: ${(result.processingTime / 1000).toFixed(1)}秒）`,
       })
 
     } catch (error) {

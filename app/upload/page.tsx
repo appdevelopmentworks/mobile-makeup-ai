@@ -7,12 +7,22 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/components/providers/auth-provider'
-import { Camera, Info, Sparkles, Image as ImageIcon } from 'lucide-react'
+import { Camera, Info, Sparkles, Loader2, CheckCircle } from 'lucide-react'
+import { ImageUpload } from '@/components/upload/image-upload'
+import { faceAnalyzer, FaceAnalysisResult } from '@/lib/face-analysis'
+import { useToast } from '../../hooks/use-toast'
+import { UsageTracker } from '@/lib/usage-tracking'
+import { UsageDisplay } from '@/components/usage/usage-display'
 
 export default function UploadPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
+  
   const [selectedRegion, setSelectedRegion] = useState('japan')
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<FaceAnalysisResult | null>(null)
 
   const regions = [
     { id: 'japan', name: '日本', flag: '🇯🇵' },
@@ -21,9 +31,94 @@ export default function UploadPage() {
     { id: 'china', name: '中国', flag: '🇨🇳' },
   ]
 
-  const handleImageCapture = () => {
-    // TODO: Implement camera/upload logic
-    router.push('/analysis/results')
+  const handleImageSelect = async (file: File) => {
+    // Check usage limits before processing
+    const canUse = UsageTracker.canUseFeature('face_analysis', user?.id)
+    if (!canUse.allowed) {
+      toast({
+        variant: 'destructive',
+        title: '利用制限に達しました',
+        description: canUse.reason,
+      })
+      return
+    }
+
+    setUploadedImage(file)
+    setAnalyzing(true)
+
+    try {
+      // Create image element for analysis
+      const img = new Image()
+      img.onload = async () => {
+        try {
+          // Record usage BEFORE analysis
+          const usageRecorded = UsageTracker.recordUsage('face_analysis', user?.id)
+          if (!usageRecorded) {
+            throw new Error('Usage recording failed')
+          }
+
+          // For demo, use mock analysis (MediaPipe needs more setup)
+          const result = faceAnalyzer.createMockAnalysis()
+          
+          setAnalysisResult(result)
+          
+          if (result.faceDetected) {
+            // Get remaining usage after this analysis
+            const remaining = UsageTracker.getRemainingUsage(user?.id)
+            const plan = UsageTracker.getCurrentUserPlan(user?.id)
+            
+            toast({
+              title: '顔検出成功！',
+              description: `信頼度: ${(result.confidence * 100).toFixed(1)}%${
+                plan.type === 'free' ? ` (残り${remaining.analyses}回)` : ''
+              }`,
+            })
+          } else {
+            toast({
+              variant: 'destructive',
+              title: '顔が検出されませんでした',
+              description: '正面を向いた顔写真をアップロードしてください',
+            })
+          }
+        } catch (error) {
+          console.error('Face analysis error:', error)
+          toast({
+            variant: 'destructive',
+            title: '分析エラー',
+            description: '画像の分析中にエラーが発生しました',
+          })
+        } finally {
+          setAnalyzing(false)
+        }
+      }
+      img.src = URL.createObjectURL(file)
+    } catch (error) {
+      console.error('Image processing error:', error)
+      setAnalyzing(false)
+      toast({
+        variant: 'destructive',
+        title: '画像処理エラー',
+        description: '画像の処理中にエラーが発生しました',
+      })
+    }
+  }
+
+  const handleImageRemove = () => {
+    setUploadedImage(null)
+    setAnalysisResult(null)
+  }
+
+  const handleProceedToAnalysis = () => {
+    if (uploadedImage && analysisResult) {
+      // Store analysis result in sessionStorage for next page
+      sessionStorage.setItem('faceAnalysisResult', JSON.stringify(analysisResult))
+      sessionStorage.setItem('selectedRegion', selectedRegion)
+      router.push('/analysis/results')
+    }
+  }
+
+  const handleUpgradeClick = () => {
+    router.push('/pricing')
   }
 
   return (
@@ -62,43 +157,86 @@ export default function UploadPage() {
 
         {/* Content */}
         <div className="p-4 pb-24 space-y-6">
+          {/* Usage Display */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+          >
+            <UsageDisplay
+              userId={user?.id}
+              onUpgradeClick={handleUpgradeClick}
+              compact={false}
+            />
+          </motion.div>
+
           {/* Upload Area */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
-            <Card 
-              className="border-2 border-dashed border-pink-200 hover:border-pink-400 transition-all duration-300 cursor-pointer shadow-lg bg-white/80 backdrop-blur-sm overflow-hidden"
-              onClick={handleImageCapture}
-            >
-              <CardContent className="p-8 text-center relative">
-                <motion.div
-                  className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-pink-100 to-purple-100 rounded-2xl flex items-center justify-center shadow-lg"
-                  whileHover={{ rotate: 10, scale: 1.1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <Camera className="w-10 h-10 text-pink-600" />
-                </motion.div>
-                <h2 className="text-xl font-bold text-gray-900 mb-3">
-                  タップして撮影
-                </h2>
-                <p className="text-gray-500 text-sm mb-4">
-                  または写真を選択
-                </p>
-                <motion.div
-                  className="inline-flex items-center gap-2 bg-pink-50 text-pink-700 px-4 py-2 rounded-full text-sm font-medium"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  AI分析を開始
-                </motion.div>
-                <div className="absolute top-0 right-0 w-16 h-16 bg-pink-100/30 rounded-full -translate-y-8 translate-x-8"></div>
-              </CardContent>
-            </Card>
+            <ImageUpload
+              onImageSelect={handleImageSelect}
+              onImageRemove={handleImageRemove}
+              className="shadow-lg"
+            />
           </motion.div>
+
+          {/* Analysis Progress */}
+          {analyzing && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-6"
+            >
+              <Loader2 className="w-8 h-8 text-pink-500 animate-spin mx-auto mb-3" />
+              <p className="text-gray-700 font-medium">顔を分析中...</p>
+              <p className="text-sm text-gray-500">AIがあなたの顔を解析しています</p>
+            </motion.div>
+          )}
+
+          {/* Analysis Result */}
+          {analysisResult && !analyzing && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="bg-gradient-to-r from-green-50 to-teal-50 border-green-200 shadow-lg">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <div>
+                      <h3 className="font-bold text-green-900">分析完了！</h3>
+                      <p className="text-sm text-green-700">
+                        信頼度: {(analysisResult.confidence * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="bg-white/50 p-3 rounded-lg">
+                      <p className="text-gray-600 mb-1">顔型</p>
+                      <p className="font-semibold text-gray-900">
+                        {analysisResult.faceShape === 'oval' ? '卵型' :
+                         analysisResult.faceShape === 'round' ? '丸型' :
+                         analysisResult.faceShape === 'square' ? '四角型' :
+                         analysisResult.faceShape === 'heart' ? 'ハート型' : '面長型'}
+                      </p>
+                    </div>
+                    <div className="bg-white/50 p-3 rounded-lg">
+                      <p className="text-gray-600 mb-1">肌色</p>
+                      <p className="font-semibold text-gray-900">
+                        {analysisResult.skinTone === 'light' ? '明るめ' :
+                         analysisResult.skinTone === 'medium' ? '標準' :
+                         analysisResult.skinTone === 'dark' ? '濃いめ' : '深め'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Tips Card */}
           <motion.div
@@ -182,25 +320,24 @@ export default function UploadPage() {
             </Card>
           </motion.div>
 
-          {/* Alternative Upload Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Button
-              variant="outline"
-              className="w-full h-14 rounded-xl border-2 hover:border-purple-300 hover:bg-purple-50 transition-all duration-300 shadow-lg"
-              onClick={() => {
-                // TODO: Implement gallery selection
-              }}
+          {/* Proceed to Results Button */}
+          {analysisResult && !analyzing && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <ImageIcon className="mr-3 w-5 h-5" />
-              <span className="font-semibold">過去の写真から選択</span>
-            </Button>
-          </motion.div>
+              <Button
+                className="w-full h-14 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={handleProceedToAnalysis}
+              >
+                <Sparkles className="mr-3 w-5 h-5" />
+                メイク提案を見る
+              </Button>
+            </motion.div>
+          )}
         </div>
       </div>
     </MainLayout>
