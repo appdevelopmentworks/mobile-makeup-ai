@@ -27,9 +27,9 @@ export const metadata: Metadata = {
     siteName: 'MakeupAI',
     images: [
       {
-        url: '/icons/icon-512x512.png',
-        width: 512,
-        height: 512,
+        url: '/makeup.png',
+        width: 1200,
+        height: 630,
         alt: 'MakeupAI',
       },
     ],
@@ -38,15 +38,17 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'MakeupAI - AIメイク提案アプリ',
     description: 'AIがあなたに最適なメイクを提案',
-    images: ['/icons/icon-512x512.png'],
+    images: ['/makeup.png'],
   },
   icons: {
     icon: [
+      { url: '/makeup.png', sizes: 'any', type: 'image/png' },
       { url: '/icons/icon-16x16.png', sizes: '16x16', type: 'image/png' },
       { url: '/icons/icon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
+    shortcut: '/makeup.png',
     apple: [
+      { url: '/makeup.png', sizes: 'any', type: 'image/png' },
       { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
       { url: '/icons/icon-180x180.png', sizes: '180x180', type: 'image/png' },
     ],
@@ -67,6 +69,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/makeup.png" type="image/png" />
+        <link rel="shortcut icon" href="/makeup.png" />
+        <link rel="apple-touch-icon" href="/makeup.png" />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
           {children}
