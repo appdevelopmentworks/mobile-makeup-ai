@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '@/components/providers/auth-provider'
 import { FaceShapeDisplay } from '@/components/analysis/face-shape-display'
 import { SkinToneDisplay } from '@/components/analysis/skin-tone-display'
 import { MakeupRecommendations } from '@/components/analysis/makeup-recommendations'
@@ -34,7 +33,6 @@ export default function AnalysisResultsPage() {
   const [originalImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
-  const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
