@@ -5,6 +5,14 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is properly configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 503 }
+      )
+    }
+
     const supabase = createRouteHandlerClient({ cookies })
     
     // Get the authenticated user
