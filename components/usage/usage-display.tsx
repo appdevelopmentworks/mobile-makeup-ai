@@ -15,6 +15,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { UsageTracker, UserPlan } from '@/lib/usage-tracking'
+import { DatabaseService } from '@/lib/database'
 
 interface UsageDisplayProps {
   userId?: string
@@ -34,14 +35,61 @@ export function UsageDisplay({
   const [stats, setStats] = useState<any>(null)
 
   useEffect(() => {
-    const updateUsageData = () => {
-      const currentPlan = UsageTracker.getCurrentUserPlan(userId)
-      const remainingUsage = UsageTracker.getRemainingUsage(userId)
-      const usageStats = userId ? UsageTracker.getUsageStats(userId) : null
+    const updateUsageData = async () => {
+      if (!userId) return
 
-      setPlan(currentPlan)
-      setRemaining(remainingUsage)
-      setStats(usageStats)
+      try {
+        // Get profile data from database
+        const profile = await DatabaseService.getProfile(userId)
+        
+        if (profile) {
+          // Convert database profile to usage format
+          const planData: UserPlan = {
+            type: profile.subscription_status as 'free' | 'premium',
+            monthlyLimit: profile.subscription_status === 'premium' ? -1 : 3,
+            currentUsage: profile.monthly_usage_count,
+            resetDate: profile.usage_reset_date,
+            features: profile.subscription_status === 'premium' 
+              ? ['basic_analysis', 'makeup_suggestions', 'ai_generation', 'advanced_analysis', 'history_save']
+              : ['basic_analysis', 'makeup_suggestions']
+          }
+
+          // Calculate remaining usage
+          const remainingUsage = {
+            analyses: profile.subscription_status === 'premium' 
+              ? -1 
+              : Math.max(0, 3 - profile.monthly_usage_count),
+            aiGeneration: profile.subscription_status === 'premium' ? -1 : 0
+          }
+
+          // Get usage stats
+          const usageStats = await DatabaseService.getUserStats(userId)
+
+          setPlan(planData)
+          setRemaining(remainingUsage)
+          setStats(usageStats)
+        } else {
+          // Fallback to local storage method
+          const currentPlan = UsageTracker.getCurrentUserPlan(userId)
+          const remainingUsage = UsageTracker.getRemainingUsage(userId)
+          const usageStats = userId ? UsageTracker.getUsageStats(userId) : null
+
+          setPlan(currentPlan)
+          setRemaining(remainingUsage)
+          setStats(usageStats)
+        }
+      } catch (error) {
+        console.error('Failed to load usage data:', error)
+        
+        // Fallback to local storage method
+        const currentPlan = UsageTracker.getCurrentUserPlan(userId)
+        const remainingUsage = UsageTracker.getRemainingUsage(userId)
+        const usageStats = userId ? UsageTracker.getUsageStats(userId) : null
+
+        setPlan(currentPlan)
+        setRemaining(remainingUsage)
+        setStats(usageStats)
+      }
     }
 
     updateUsageData()

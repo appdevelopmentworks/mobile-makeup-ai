@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/providers/auth-provider'
@@ -12,12 +12,6 @@ export const metadata: Metadata = {
   description: 'AIがあなたに最適なメイクを提案するパーソナライズドアプリ',
   keywords: ['メイク', 'AI', '美容', '提案', 'ビジュアル化'],
   authors: [{ name: 'MakeupAI Team' }],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -30,6 +24,13 @@ export const metadata: Metadata = {
     locale: 'ja_JP',
     siteName: 'MakeupAI',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Sparkles, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
-import { signUp, signInWithGoogle } from '@/lib/auth'
+import { signUp, signUpWithGoogle } from '@/lib/auth'
 import { useToast } from '../../hooks/use-toast'
 import { MainLayout } from '../../components/layout'
 
@@ -100,7 +100,7 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const { error } = await signInWithGoogle('/dashboard')
+      const { error } = await signUpWithGoogle('/dashboard')
 
       if (error) {
         toast({
@@ -132,8 +132,9 @@ export default function SignupPage() {
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
             MakeupAI
           </CardTitle>
-          <CardDescription>
-            新しいアカウントを作成
+          <CardDescription className="text-gray-600">
+            新しいアカウントを作成して<br />
+            AIメイクアドバイスを始めましょう
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -275,26 +276,36 @@ export default function SignupPage() {
 
           <Button
             variant="outline"
-            className="w-full touch-target"
+            className="w-full touch-target bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-blue-300 transition-all duration-200"
             onClick={handleGoogleSignup}
             disabled={loading}
           >
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+            <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
               <path
-                fill="currentColor"
+                fill="#4285f4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               />
               <path
-                fill="currentColor"
+                fill="#34a853"
                 d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
               />
               <path
-                fill="currentColor"
+                fill="#fbbc04"
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
+              <path
+                fill="#ea4335"
+                d="M1 1h4v4H1z"
+              />
             </svg>
-            Googleで登録
+            <span className="font-semibold text-gray-700">
+              {loading ? 'Google認証中...' : 'Googleアカウントで簡単登録'}
+            </span>
           </Button>
+
+          <div className="text-center text-xs text-gray-500 px-2">
+            💡 Googleアカウントなら面倒なパスワード設定不要！わずか数秒で登録完了
+          </div>
 
           <div className="text-center text-sm">
             すでにアカウントをお持ちの方は{' '}

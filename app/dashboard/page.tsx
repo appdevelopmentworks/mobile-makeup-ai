@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/components/providers/auth-provider'
 import { UsageDisplay } from '@/components/usage/usage-display'
-import { Camera, History, Settings, Sparkles, TrendingUp, Crown } from 'lucide-react'
+import { UsageCharts } from '@/components/dashboard/usage-charts'
+import { Camera, History, Settings, Sparkles, TrendingUp, Crown, Download } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -61,6 +62,17 @@ export default function DashboardPage() {
               compact={false}
             />
           </motion.div>
+
+          {/* Usage Charts */}
+          {user?.id && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.6 }}
+            >
+              <UsageCharts userId={user.id} />
+            </motion.div>
+          )}
 
           {/* Main Action */}
           <motion.div
@@ -121,7 +133,7 @@ export default function DashboardPage() {
                   {[
                     { href: "/history", icon: History, label: "履歴", emoji: "📋" },
                     { href: "/upload", icon: TrendingUp, label: "トレンド", emoji: "🎨" },
-                    { href: "/dashboard", icon: Sparkles, label: "使い方", emoji: "💡" },
+                    { href: "/history?tab=export", icon: Download, label: "エクスポート", emoji: "💾" },
                     { href: "/settings", icon: Settings, label: "設定", emoji: "⚙️" },
                   ].map((item, index) => (
                     <motion.div

@@ -11,8 +11,8 @@ import { Camera, Info, Sparkles, Loader2, CheckCircle } from 'lucide-react'
 import { ImageUpload } from '@/components/upload/image-upload'
 import { faceAnalyzer, FaceAnalysisResult } from '@/lib/face-analysis'
 import { useToast } from '../../hooks/use-toast'
-import { UsageTracker } from '@/lib/usage-tracking'
 import { UsageDisplay } from '@/components/usage/usage-display'
+import { DatabaseService } from '@/lib/database'
 
 export default function UploadPage() {
   const { user } = useAuth()
@@ -32,13 +32,22 @@ export default function UploadPage() {
   ]
 
   const handleImageSelect = async (file: File) => {
-    // Check usage limits before processing
-    const canUse = UsageTracker.canUseFeature('face_analysis', user?.id)
-    if (!canUse.allowed) {
+    if (!user?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'ログインが必要です',
+        description: 'サービスを利用するにはログインしてください。',
+      })
+      return
+    }
+
+    // Check usage limits using database
+    const usageCheck = await DatabaseService.canUseService(user.id)
+    if (!usageCheck.allowed) {
       toast({
         variant: 'destructive',
         title: '利用制限に達しました',
-        description: canUse.reason,
+        description: usageCheck.reason,
       })
       return
     }
@@ -51,27 +60,15 @@ export default function UploadPage() {
       const img = new Image()
       img.onload = async () => {
         try {
-          // Record usage BEFORE analysis
-          const usageRecorded = UsageTracker.recordUsage('face_analysis', user?.id)
-          if (!usageRecorded) {
-            throw new Error('Usage recording failed')
-          }
-
           // For demo, use mock analysis (MediaPipe needs more setup)
           const result = faceAnalyzer.createMockAnalysis()
           
           setAnalysisResult(result)
           
           if (result.faceDetected) {
-            // Get remaining usage after this analysis
-            const remaining = UsageTracker.getRemainingUsage(user?.id)
-            const plan = UsageTracker.getCurrentUserPlan(user?.id)
-            
             toast({
               title: '顔検出成功！',
-              description: `信頼度: ${(result.confidence * 100).toFixed(1)}%${
-                plan.type === 'free' ? ` (残り${remaining.analyses}回)` : ''
-              }`,
+              description: `信頼度: ${(result.confidence * 100).toFixed(1)}%`,
             })
           } else {
             toast({
@@ -108,12 +105,71 @@ export default function UploadPage() {
     setAnalysisResult(null)
   }
 
-  const handleProceedToAnalysis = () => {
-    if (uploadedImage && analysisResult) {
-      // Store analysis result in sessionStorage for next page
-      sessionStorage.setItem('faceAnalysisResult', JSON.stringify(analysisResult))
-      sessionStorage.setItem('selectedRegion', selectedRegion)
-      router.push('/analysis/results')
+  const handleProceedToAnalysis = async () => {
+    if (uploadedImage && analysisResult && user?.id) {
+      try {
+        // Import makeup engine to generate suggestions
+        const { makeupEngine } = await import('@/lib/makeup-suggestions')
+        
+        // Generate makeup plan
+        const makeupPlan = makeupEngine.generateSuggestions(
+          analysisResult, 
+          selectedRegion, 
+          { style: 'natural', occasion: 'daily' }
+        )
+
+        // Convert image to base64 for storage
+        const imageData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(uploadedImage)
+        })
+
+        // Save to database
+        const analysisId = await DatabaseService.saveAnalysisResult(
+          {
+            user_id: user.id,
+            face_analysis: analysisResult,
+            selected_trend_region: selectedRegion,
+            analysis_type: 'standard',
+            occasion: 'daily',
+            processing_time_ms: 2000 // Mock processing time
+          },
+          makeupPlan,
+          imageData
+        )
+
+        if (analysisId) {
+          // Store for next page - keep sessionStorage as backup
+          sessionStorage.setItem('faceAnalysisResult', JSON.stringify(analysisResult))
+          sessionStorage.setItem('selectedRegion', selectedRegion)
+          sessionStorage.setItem('analysisId', analysisId)
+          
+          toast({
+            title: '分析結果を保存しました',
+            description: '履歴から後で確認できます',
+          })
+          
+          router.push('/analysis/results')
+        } else {
+          throw new Error('保存に失敗しました')
+        }
+      } catch (error) {
+        console.error('Save analysis error:', error)
+        
+        // Fallback to sessionStorage only
+        sessionStorage.setItem('faceAnalysisResult', JSON.stringify(analysisResult))
+        sessionStorage.setItem('selectedRegion', selectedRegion)
+        
+        toast({
+          variant: 'destructive',
+          title: '保存エラー',
+          description: '結果は一時的に保存されています',
+        })
+        
+        router.push('/analysis/results')
+      }
     }
   }
 

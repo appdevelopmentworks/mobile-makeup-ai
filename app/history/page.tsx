@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/auth-provider'
 import { HistoryItemComponent } from '@/components/history/history-item'
@@ -19,36 +19,214 @@ import {
   Sparkles,
   Upload,
   Trash2,
-  Download
+  Download,
+  Loader2,
+  X,
+  Hash
 } from 'lucide-react'
 import { useToast } from '../../hooks/use-toast'
-import { mockHistoryItems, mockUserStats } from '@/types/history'
+import { DatabaseService } from '@/lib/database'
+import { ExportManager } from '@/components/export/export-manager'
 import type { HistoryItem, HistoryFilters, UserStats } from '@/types/history'
 
 export default function HistoryPage() {
-  const [historyItems, setHistoryItems] = useState<HistoryItem[]>(mockHistoryItems)
-  const [userStats] = useState<UserStats>(mockUserStats)
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([])
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<HistoryFilters>({
     dateRange: 'all',
     searchQuery: ''
   })
   const [selectedItems, setSelectedItems] = useState<string[]>([])
-  const { user, loading } = useAuth()
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const { user, loading: authLoading } = useAuth()
   const { toast } = useToast()
 
-  // Filter and search logic
+  // Load history data when user is available
+  useEffect(() => {
+    const loadHistoryData = async () => {
+      if (!user?.id) return
+
+      setLoading(true)
+      try {
+        // Load analysis history
+        const history = await DatabaseService.getAnalysisHistory(user.id, 50)
+        
+        // Convert database records to HistoryItem format
+        const historyItems: HistoryItem[] = history.map(record => ({
+          id: record.id,
+          userId: record.user_id,
+          date: record.created_at,
+          thumbnailUrl: record.original_image_data || '/placeholder-face.jpg',
+          imageUrl: record.original_image_data || '/placeholder-face.jpg',
+          styleName: getStyleName(record.analysis_type, record.occasion),
+          selectedStyle: 'natural', // Default style
+          faceShape: getFaceShapeDisplay(record.face_analysis?.faceShape),
+          skinTone: getSkinToneDisplay(record.face_analysis?.skinTone),
+          confidence: Math.round((record.face_analysis?.confidence || 0.9) * 100),
+          tags: getTags(record),
+          isFavorite: (record.face_analysis as any)?.favorite || false,
+          generatedImage: null, // TODO: Load generated images
+          createdAt: record.created_at,
+          updatedAt: record.created_at
+        }))
+
+        setHistoryItems(historyItems)
+        
+        // Generate search suggestions from all data
+        const suggestions = new Set<string>()
+        historyItems.forEach(item => {
+          // Add style names
+          suggestions.add(item.styleName)
+          // Add face shapes
+          suggestions.add(item.faceShape)
+          // Add skin tones
+          suggestions.add(item.skinTone)
+          // Add tags
+          item.tags?.forEach(tag => suggestions.add(tag))
+        })
+        setSearchSuggestions(Array.from(suggestions).filter(s => s !== '未分析'))
+
+        // Load user stats
+        const stats = await DatabaseService.getUserStats(user.id)
+        setUserStats({
+          totalAnalyses: stats.totalAnalyses,
+          currentMonthUsage: stats.thisMonthAnalyses,
+          monthlyLimit: 3, // Default for free users
+          favoriteCount: 0, // TODO: Implement favorites
+          mostUsedStyle: stats.favoriteFeatures[0] || '自然メイク',
+          joinedDate: new Date().toISOString() // TODO: Get actual join date
+        })
+
+      } catch (error) {
+        console.error('Failed to load history:', error)
+        toast({
+          variant: 'destructive',
+          title: '履歴の読み込みに失敗',
+          description: 'データの取得中にエラーが発生しました。'
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!authLoading) {
+      loadHistoryData()
+    }
+  }, [user?.id, authLoading, toast])
+
+  // Helper functions
+  const getStyleName = (analysisType: string, occasion?: string): string => {
+    if (occasion) {
+      const occasionMap: Record<string, string> = {
+        daily: 'デイリーメイク',
+        business: 'ビジネスメイク',
+        party: 'パーティーメイク',
+        date: 'デートメイク'
+      }
+      return occasionMap[occasion] || 'カスタムメイク'
+    }
+    
+    const typeMap: Record<string, string> = {
+      standard: 'スタンダード分析',
+      quick: 'クイック分析',
+      detailed: '詳細分析'
+    }
+    return typeMap[analysisType] || 'メイク分析'
+  }
+
+  const getFaceShapeDisplay = (faceShape?: string): string => {
+    const shapeMap: Record<string, string> = {
+      oval: '卵型',
+      round: '丸型',
+      square: '四角型',
+      heart: 'ハート型',
+      oblong: '面長型'
+    }
+    return shapeMap[faceShape || ''] || '未分析'
+  }
+
+  const getSkinToneDisplay = (skinTone?: string): string => {
+    const toneMap: Record<string, string> = {
+      light: '明るめ',
+      medium: '標準',
+      dark: '濃いめ',
+      deep: '深め'
+    }
+    return toneMap[skinTone || ''] || '未分析'
+  }
+
+  const getTags = (record: any): string[] => {
+    const tags: string[] = []
+    if (record.analysis_type === 'detailed') tags.push('詳細分析')
+    if (record.occasion) tags.push(record.occasion)
+    if (record.face_analysis?.confidence > 0.9) tags.push('高精度')
+    return tags
+  }
+
+  // Enhanced search handler
+  const handleSearchChange = (value: string) => {
+    setFilters({...filters, searchQuery: value})
+    setShowSuggestions(value.length > 0)
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setFilters({...filters, searchQuery: suggestion})
+    setShowSuggestions(false)
+  }
+
+  const clearSearch = () => {
+    setFilters({...filters, searchQuery: ''})
+    setShowSuggestions(false)
+  }
+
+  const getSearchResultsText = (): string => {
+    if (!filters.searchQuery) return `${filteredItems.length}件の結果`
+    
+    const activeFilters = []
+    if (filters.searchQuery) activeFilters.push(`"${filters.searchQuery}"`)
+    if (filters.favorites) activeFilters.push('お気に入り')
+    if (filters.faceShape) activeFilters.push(`顔型: ${filters.faceShape}`)
+    if (filters.dateRange !== 'all') {
+      const dateLabels = {
+        week: '1週間以内',
+        month: '1ヶ月以内', 
+        quarter: '3ヶ月以内',
+        year: '1年以内'
+      }
+      activeFilters.push(dateLabels[filters.dateRange as keyof typeof dateLabels] || filters.dateRange)
+    }
+
+    return `${filteredItems.length}件の結果 (${activeFilters.join(', ')})`
+  }
+
+  // Enhanced filter and search logic
   const filteredItems = useMemo(() => {
     let filtered = [...historyItems]
 
-    // Search filter
+    // Enhanced search filter
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase()
-      filtered = filtered.filter(item => 
-        item.styleName.toLowerCase().includes(query) ||
-        item.faceShape.toLowerCase().includes(query) ||
-        item.skinTone.toLowerCase().includes(query) ||
-        item.tags?.some(tag => tag.toLowerCase().includes(query))
-      )
+      const queryTerms = query.split(' ').filter(term => term.length > 0)
+      
+      filtered = filtered.filter(item => {
+        const searchableText = [
+          item.styleName,
+          item.faceShape,
+          item.skinTone,
+          ...(item.tags || []),
+          new Date(item.createdAt).toLocaleDateString('ja-JP'),
+          new Date(item.createdAt).toLocaleDateString('ja-JP', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })
+        ].join(' ').toLowerCase()
+
+        // Support multiple search terms (AND logic)
+        return queryTerms.every(term => searchableText.includes(term))
+      })
     }
 
     // Date range filter
@@ -98,62 +276,129 @@ export default function HistoryPage() {
     return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [historyItems, filters])
 
-  const handleToggleFavorite = (id: string) => {
-    setHistoryItems(items => 
-      items.map(item => 
-        item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
+  const handleToggleFavorite = async (id: string) => {
+    if (!user?.id) return
+
+    try {
+      const success = await DatabaseService.toggleFavorite(id, user.id)
+      
+      if (success) {
+        // Update local state
+        setHistoryItems(items => 
+          items.map(item => 
+            item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
+          )
+        )
+        
+        const item = historyItems.find(item => item.id === id)
+        toast({
+          title: item?.isFavorite ? 'お気に入りから削除しました' : 'お気に入りに追加しました',
+          description: item?.styleName,
+        })
+      } else {
+        throw new Error('Failed to toggle favorite')
+      }
+    } catch (error) {
+      console.error('Toggle favorite error:', error)
+      toast({
+        variant: 'destructive',
+        title: 'エラー',
+        description: 'お気に入りの更新に失敗しました。',
+      })
+    }
+  }
+
+  const handleDeleteItem = async (id: string) => {
+    if (!user?.id) return
+
+    try {
+      const success = await DatabaseService.deleteAnalysis(id, user.id)
+      
+      if (success) {
+        setHistoryItems(items => items.filter(item => item.id !== id))
+        toast({
+          title: '分析結果を削除しました',
+          description: '履歴から削除されました。',
+        })
+      } else {
+        throw new Error('削除に失敗しました')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast({
+        variant: 'destructive',
+        title: '削除エラー',
+        description: '分析結果の削除に失敗しました。',
+      })
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0 || !user?.id) return
+
+    try {
+      // Delete each selected item
+      const deletePromises = selectedItems.map(id => 
+        DatabaseService.deleteAnalysis(id, user.id)
       )
-    )
-    
-    const item = historyItems.find(item => item.id === id)
-    toast({
-      title: item?.isFavorite ? 'お気に入りから削除しました' : 'お気に入りに追加しました',
-      description: item?.styleName,
-    })
+      
+      const results = await Promise.all(deletePromises)
+      const successCount = results.filter(result => result).length
+      
+      // Remove successfully deleted items from UI
+      if (successCount > 0) {
+        setHistoryItems(items => items.filter(item => !selectedItems.includes(item.id)))
+        setSelectedItems([])
+        
+        toast({
+          title: `${successCount}件の分析結果を削除しました`,
+          description: successCount < selectedItems.length ? 
+            `${selectedItems.length - successCount}件の削除に失敗しました。` : 
+            '削除された結果は復元できません。',
+        })
+      }
+    } catch (error) {
+      console.error('Bulk delete error:', error)
+      toast({
+        variant: 'destructive',
+        title: '一括削除エラー',
+        description: '選択した項目の削除に失敗しました。',
+      })
+    }
   }
 
-  const handleDeleteItem = (id: string) => {
-    setHistoryItems(items => items.filter(item => item.id !== id))
-    toast({
-      title: '分析結果を削除しました',
-      description: '削除された結果は復元できません。',
-    })
+  const handleViewItem = (id: string) => {
+    // Navigate to analysis results page with the specific analysis
+    window.location.href = `/analysis/results?id=${id}`
   }
 
-  const handleViewItem = (_id: string) => {
-    // TODO: Navigate to detailed view
-    toast({
-      title: '詳細表示',
-      description: '詳細ページを開きます（実装予定）',
-    })
+  const handleBulkDelete = async () => {
+    await handleDeleteSelected()
   }
 
-  const handleBulkDelete = () => {
-    if (selectedItems.length === 0) return
-    
-    setHistoryItems(items => items.filter(item => !selectedItems.includes(item.id)))
-    setSelectedItems([])
-    toast({
-      title: `${selectedItems.length}件の分析結果を削除しました`,
-      description: '削除された結果は復元できません。',
-    })
-  }
 
-  const handleExportData = () => {
-    // TODO: Implement data export
-    toast({
-      title: 'データをエクスポート',
-      description: '分析履歴をCSVファイルでダウンロードします（実装予定）',
-    })
-  }
-
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <Sparkles className="h-12 w-12 text-pink-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">読み込み中...</p>
+          <Loader2 className="h-12 w-12 text-pink-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">履歴を読み込み中...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-600 mb-4">ログインが必要です</p>
+            <Button asChild>
+              <Link href="/login">ログイン</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -194,7 +439,7 @@ export default function HistoryPage() {
           <Card>
             <CardContent className="p-4 text-center">
               <BarChart3 className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold">{userStats.totalAnalyses}</div>
+              <div className="text-2xl font-bold">{userStats?.totalAnalyses || 0}</div>
               <p className="text-sm text-gray-600">総分析回数</p>
             </CardContent>
           </Card>
@@ -203,16 +448,16 @@ export default function HistoryPage() {
             <CardContent className="p-4 text-center">
               <Calendar className="h-8 w-8 text-green-500 mx-auto mb-2" />
               <div className="text-2xl font-bold">
-                {userStats.currentMonthUsage}/{userStats.monthlyLimit}
+                {userStats?.currentMonthUsage || 0}
               </div>
-              <p className="text-sm text-gray-600">今月の使用</p>
+              <p className="text-sm text-gray-600">今月の分析</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-4 text-center">
               <Heart className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold">{userStats.favoriteCount}</div>
+              <div className="text-2xl font-bold">{userStats?.favoriteCount || 0}</div>
               <p className="text-sm text-gray-600">お気に入り</p>
             </CardContent>
           </Card>
@@ -220,8 +465,8 @@ export default function HistoryPage() {
           <Card>
             <CardContent className="p-4 text-center">
               <Sparkles className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-sm font-bold truncate">{userStats.mostUsedStyle}</div>
-              <p className="text-sm text-gray-600">人気スタイル</p>
+              <div className="text-sm font-bold truncate">{userStats?.mostUsedStyle || '未設定'}</div>
+              <p className="text-sm text-gray-600">好きなスタイル</p>
             </CardContent>
           </Card>
         </div>
@@ -239,11 +484,41 @@ export default function HistoryPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="スタイル、顔型、肌色で検索..."
+                  placeholder="スタイル、顔型、肌色、日付で検索..."
                   value={filters.searchQuery || ''}
-                  onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
-                  className="pl-10"
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10 pr-8"
                 />
+                {filters.searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-2 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                
+                {/* Search Suggestions */}
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {searchSuggestions
+                      .filter(suggestion => 
+                        suggestion.toLowerCase().includes(filters.searchQuery?.toLowerCase() || '')
+                      )
+                      .slice(0, 8)
+                      .map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <Hash className="h-3 w-3 text-gray-400" />
+                          {suggestion}
+                        </button>
+                      ))
+                    }
+                  </div>
+                )}
               </div>
               
               <Select
@@ -295,15 +570,31 @@ export default function HistoryPage() {
 
         {/* Action Bar */}
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-gray-600">
-              {filteredItems.length}件の結果
+              {getSearchResultsText()}
             </span>
             {selectedItems.length > 0 && (
               <Badge variant="secondary">
                 {selectedItems.length}件選択中
               </Badge>
             )}
+            
+            {/* Active filters display */}
+            <div className="flex gap-1">
+              {filters.searchQuery && (
+                <Badge variant="outline" className="text-xs">
+                  <Search className="h-3 w-3 mr-1" />
+                  検索中
+                </Badge>
+              )}
+              {filters.favorites && (
+                <Badge variant="outline" className="text-xs">
+                  <Heart className="h-3 w-3 mr-1" />
+                  お気に入り
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-2">
@@ -322,7 +613,7 @@ export default function HistoryPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExportData}
+              onClick={() => document.getElementById('export-section')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <Download className="h-4 w-4 mr-1" />
               エクスポート
@@ -335,6 +626,22 @@ export default function HistoryPage() {
               </Link>
             </Button>
           </div>
+        </div>
+
+        {/* Export Section */}
+        <div id="export-section" className="mb-8">
+          <ExportManager
+            historyItems={filteredItems}
+            userStats={userStats || {
+              totalAnalyses: 0,
+              currentMonthUsage: 0,
+              monthlyLimit: 3,
+              favoriteCount: 0,
+              mostUsedStyle: '未設定',
+              joinedDate: new Date().toISOString()
+            }}
+            userName={user?.user_metadata?.name || user?.email}
+          />
         </div>
 
         {/* History List */}
@@ -360,12 +667,23 @@ export default function HistoryPage() {
                   : '分析履歴がありません'
                 }
               </h3>
-              <p className="text-gray-500 mb-6">
-                {filters.searchQuery || filters.favorites || filters.faceShape || filters.dateRange !== 'all'
-                  ? 'フィルターを変更して再度お試しください。'
-                  : '写真をアップロードして最初の分析を始めましょう。'
-                }
-              </p>
+              <div className="text-gray-500 mb-6">
+                {filters.searchQuery || filters.favorites || filters.faceShape || filters.dateRange !== 'all' ? (
+                  <div className="space-y-2">
+                    <p>検索条件を変更して再度お試しください。</p>
+                    {filters.searchQuery && (
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4" />
+                        <span className="text-sm">
+                          検索候補: {searchSuggestions.slice(0, 3).join(', ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p>写真をアップロードして最初の分析を始めましょう。</p>
+                )}
+              </div>
               <Button asChild>
                 <Link href="/upload">
                   <Upload className="h-4 w-4 mr-2" />

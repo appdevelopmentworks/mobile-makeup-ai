@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/auth-provider'
+import { DatabaseService } from '@/lib/database'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -111,8 +112,73 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(mockUserSettings)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { loading } = useAuth()
+  const [dataLoading, setDataLoading] = useState(true)
+  const { user, loading } = useAuth()
   const { toast } = useToast()
+
+  // Load user settings from database
+  useEffect(() => {
+    const loadUserSettings = async () => {
+      if (!user?.id) return
+
+      setDataLoading(true)
+      try {
+        // Load profile data
+        const profile = await DatabaseService.getProfile(user.id)
+        // Load preferences
+        const preferences = await DatabaseService.getUserPreferences(user.id)
+
+        if (profile && preferences) {
+          const userSettings: UserSettings = {
+            profile: {
+              name: profile.full_name || user.user_metadata?.name || 'ユーザー名',
+              email: profile.email || user.email || '',
+              avatar: profile.avatar_url || user.user_metadata?.avatar_url || ''
+            },
+            notifications: {
+              email: preferences.notification_settings.email || true,
+              push: preferences.notification_settings.push || false,
+              marketing: preferences.notification_settings.promotions || false,
+              analysisComplete: preferences.notification_settings.trends || true,
+              weeklyTips: true
+            },
+            privacy: {
+              profileVisible: true,
+              dataSharing: false,
+              analyticsTracking: true
+            },
+            appearance: {
+              theme: 'system',
+              language: preferences.language as 'ja' | 'en' || 'ja',
+              imageQuality: 'standard'
+            },
+            subscription: {
+              plan: profile.subscription_status as 'free' | 'premium',
+              status: profile.subscription_status === 'premium' ? 'active' : 'active',
+              nextBilling: profile.subscription_end_date || '',
+              usageCount: profile.monthly_usage_count,
+              usageLimit: profile.subscription_status === 'premium' ? -1 : 3
+            }
+          }
+          
+          setSettings(userSettings)
+        }
+      } catch (error) {
+        console.error('Failed to load user settings:', error)
+        toast({
+          variant: 'destructive',
+          title: '設定の読み込みに失敗',
+          description: 'ユーザー設定の取得中にエラーが発生しました。'
+        })
+      } finally {
+        setDataLoading(false)
+      }
+    }
+
+    if (!loading) {
+      loadUserSettings()
+    }
+  }, [user?.id, loading, toast])
 
   const updateSettings = <T extends keyof UserSettings>(
     section: T,
@@ -125,15 +191,26 @@ export default function SettingsPage() {
   }
 
   const handleSaveProfile = async () => {
+    if (!user?.id) return
+
     setIsLoading(true)
     try {
-      // TODO: Implement API call to save profile
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast({
-        title: 'プロフィールを更新しました',
-        description: '変更内容が保存されました。',
+      // Update profile in database
+      const success = await DatabaseService.updateProfile(user.id, {
+        full_name: settings.profile.name,
+        avatar_url: settings.profile.avatar
       })
+
+      if (success) {
+        toast({
+          title: 'プロフィールを更新しました',
+          description: '変更内容が保存されました。',
+        })
+      } else {
+        throw new Error('Profile update failed')
+      }
     } catch (error) {
+      console.error('Profile save error:', error)
       toast({
         variant: 'destructive',
         title: '更新エラー',
@@ -157,6 +234,80 @@ export default function SettingsPage() {
         title: 'ログアウトエラー',
         description: 'ログアウトに失敗しました。',
       })
+    }
+  }
+
+  const handleSaveNotifications = async () => {
+    if (!user?.id) return
+
+    setIsLoading(true)
+    try {
+      // Get current preferences and update notifications
+      const currentPrefs = await DatabaseService.getUserPreferences(user.id)
+      if (currentPrefs) {
+        const updatedPrefs = {
+          ...currentPrefs,
+          notification_settings: {
+            email: settings.notifications.email,
+            push: settings.notifications.push,
+            trends: settings.notifications.analysisComplete,
+            promotions: settings.notifications.marketing
+          }
+        }
+
+        const success = await DatabaseService.saveUserPreferences(updatedPrefs)
+        if (success) {
+          toast({
+            title: '通知設定を更新しました',
+            description: '変更内容が保存されました。',
+          })
+        } else {
+          throw new Error('Notifications save failed')
+        }
+      }
+    } catch (error) {
+      console.error('Notifications save error:', error)
+      toast({
+        variant: 'destructive',
+        title: '更新エラー',
+        description: '通知設定の更新に失敗しました。',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSaveAppearance = async () => {
+    if (!user?.id) return
+
+    setIsLoading(true)
+    try {
+      const currentPrefs = await DatabaseService.getUserPreferences(user.id)
+      if (currentPrefs) {
+        const updatedPrefs = {
+          ...currentPrefs,
+          language: settings.appearance.language
+        }
+
+        const success = await DatabaseService.saveUserPreferences(updatedPrefs)
+        if (success) {
+          toast({
+            title: '表示設定を更新しました',
+            description: '変更内容が保存されました。',
+          })
+        } else {
+          throw new Error('Appearance save failed')
+        }
+      }
+    } catch (error) {
+      console.error('Appearance save error:', error)
+      toast({
+        variant: 'destructive',
+        title: '更新エラー',
+        description: '表示設定の更新に失敗しました。',
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -184,12 +335,12 @@ export default function SettingsPage() {
     })
   }
 
-  if (loading) {
+  if (loading || dataLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <SettingsIcon className="h-12 w-12 text-pink-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">読み込み中...</p>
+          <p className="text-gray-600">設定を読み込み中...</p>
         </div>
       </div>
     )
@@ -436,6 +587,12 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+                
+                <div className="pt-4 border-t">
+                  <Button onClick={handleSaveNotifications} disabled={isLoading}>
+                    {isLoading ? '保存中...' : '通知設定を保存'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -620,6 +777,12 @@ export default function SettingsPage() {
                       高品質は通信量が多くなります
                     </p>
                   </div>
+                </div>
+                
+                <div className="pt-4 border-t">
+                  <Button onClick={handleSaveAppearance} disabled={isLoading}>
+                    {isLoading ? '保存中...' : '表示設定を保存'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

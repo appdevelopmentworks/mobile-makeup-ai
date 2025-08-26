@@ -67,6 +67,11 @@ export async function signIn(data: SignInData): Promise<AuthResult> {
   }
 }
 
+// Sign up with Google OAuth (for new users)
+export async function signUpWithGoogle(redirectTo?: string) {
+  return signInWithGoogle(redirectTo)
+}
+
 // Sign in with Google OAuth
 export async function signInWithGoogle(redirectTo?: string) {
   if (!isSupabaseConfigured) {

@@ -8,6 +8,8 @@ import { FaceShapeDisplay } from '@/components/analysis/face-shape-display'
 import { SkinToneDisplay } from '@/components/analysis/skin-tone-display'
 import { MakeupRecommendations } from '@/components/analysis/makeup-recommendations'
 import { AIImageGenerator } from '@/components/analysis/ai-image-generator'
+import { FaceAnalysisChart } from '@/components/analysis/face-analysis-chart'
+import { InteractiveResult } from '@/components/analysis/interactive-result'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -284,6 +286,25 @@ export default function AnalysisResultsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Analysis Charts Section */}
+        <div className="mb-8">
+          <FaceAnalysisChart 
+            faceShape={analysisData.faceShape}
+            skinTone={analysisData.skinTone}
+            confidence={analysisData.confidence}
+          />
+        </div>
+
+        {/* Interactive Results Section */}
+        <div className="mb-8">
+          <InteractiveResult 
+            analysisData={analysisData}
+            makeupPlan={makeupPlan}
+            onSaveResults={handleSaveResults}
+            isSaved={saved}
+          />
+        </div>
 
         {/* Results Grid */}
         <div className="grid lg:grid-cols-2 gap-8">
