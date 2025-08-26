@@ -522,17 +522,6 @@ export class AIImageGenerator {
     }
   }
 
-  private getMockImage(_style: string): string {
-    // In a real implementation, these would be actual generated images
-    const mockImages = {
-      natural: '/placeholder-natural-makeup.jpg',
-      glamour: '/placeholder-glamour-makeup.jpg', 
-      cute: '/placeholder-cute-makeup.jpg',
-      mature: '/placeholder-mature-makeup.jpg'
-    }
-    
-    return mockImages[style as keyof typeof mockImages] || mockImages.natural
-  }
 
   // Utility method to convert File to base64
   static async fileToBase64(file: File): Promise<string> {

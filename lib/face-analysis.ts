@@ -83,12 +83,11 @@ export class FaceAnalyzer {
     }
   }
 
-  private onResults(results: FaceDetectionResults) {
+  private onResults(_results: FaceDetectionResults) {
     // This will be called by MediaPipe when detection is complete
-    this.lastResults = results
+    // Results are processed immediately, no need to store
   }
 
-  private _lastResults: FaceDetectionResults | null = null
 
   async analyzeImage(imageElement: HTMLImageElement): Promise<FaceAnalysisResult> {
     try {
