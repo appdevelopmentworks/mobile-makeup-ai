@@ -80,7 +80,7 @@ export function AIImageGenerator({
 
       const result = await aiImageGenerator.generateMakeupImage(request, onProgress)
       
-      setGeneratedImage(result.generatedImage)
+      setGeneratedImage(result.generatedImage || null)
 
       toast({
         title: 'AI画像生成完了',

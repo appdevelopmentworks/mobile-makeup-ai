@@ -20,7 +20,7 @@ import {
   Gift
 } from 'lucide-react'
 import { useToast } from '../../hooks/use-toast'
-import { stripeService, StripeService, stripePromise } from '@/lib/stripe'
+import { StripeService, stripePromise } from '@/lib/stripe'
 
 interface PlanFeature {
   text: string

@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { 
   Camera, 
   RotateCcw, 
-  Zap, 
   X, 
   Check,
   Download,

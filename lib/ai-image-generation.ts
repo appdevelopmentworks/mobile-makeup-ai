@@ -222,7 +222,7 @@ export class AIImageGenerator {
   }
 
   private async generateWithOpenAI(
-    request: ImageGenerationRequest,
+    _request: ImageGenerationRequest,
     prompt: string,
     options: ImageGenerationOptions,
     onProgress?: (progress: GenerationProgress) => void
@@ -418,7 +418,7 @@ export class AIImageGenerator {
     // Add makeup plan specifics if available
     if (makeupPlan && makeupPlan.suggestions.length > 0) {
       const makeupDetails = makeupPlan.suggestions.map(suggestion => {
-        if (suggestion.category === 'base') {
+        if (suggestion.category === 'foundation') {
           return 'flawless base makeup'
         } else if (suggestion.category === 'eyes') {
           return 'beautifully defined eyes'
@@ -522,7 +522,7 @@ export class AIImageGenerator {
     }
   }
 
-  private getMockImage(style: string): string {
+  private getMockImage(_style: string): string {
     // In a real implementation, these would be actual generated images
     const mockImages = {
       natural: '/placeholder-natural-makeup.jpg',

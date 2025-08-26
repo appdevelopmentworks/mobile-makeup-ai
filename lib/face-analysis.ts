@@ -88,7 +88,7 @@ export class FaceAnalyzer {
     this.lastResults = results
   }
 
-  private lastResults: FaceDetectionResults | null = null
+  private _lastResults: FaceDetectionResults | null = null
 
   async analyzeImage(imageElement: HTMLImageElement): Promise<FaceAnalysisResult> {
     try {
@@ -141,10 +141,10 @@ export class FaceAnalyzer {
 
             const result: FaceAnalysisResult = {
               faceDetected: true,
-              confidence: Math.max(0.7, Math.min(0.99, detection.score || 0.85)),
+              confidence: Math.max(0.7, Math.min(0.99, (detection as any).score || 0.85)),
               boundingBox: {
-                xMin: boundingBox.xMin,
-                yMin: boundingBox.yMin,
+                xMin: (boundingBox as any).xMin,
+                yMin: (boundingBox as any).yMin,
                 width: boundingBox.width,
                 height: boundingBox.height
               },

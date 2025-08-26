@@ -96,8 +96,8 @@ async function handleCheckoutCompleted(session: any, supabase: any) {
       price_id: priceId,
       plan_type: planType,
       status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000),
-      current_period_end: new Date(subscription.current_period_end * 1000),
+      current_period_start: new Date((subscription as any).current_period_start * 1000),
+      current_period_end: new Date((subscription as any).current_period_end * 1000),
       created_at: new Date(),
       updated_at: new Date()
     })
@@ -126,8 +126,8 @@ async function handlePaymentSucceeded(invoice: any, supabase: any) {
     .from('user_subscriptions')
     .update({
       status: 'active',
-      current_period_start: new Date(subscription.current_period_start * 1000),
-      current_period_end: new Date(subscription.current_period_end * 1000),
+      current_period_start: new Date((subscription as any).current_period_start * 1000),
+      current_period_end: new Date((subscription as any).current_period_end * 1000),
       updated_at: new Date()
     })
     .eq('user_id', userId)
@@ -177,8 +177,8 @@ async function handleSubscriptionUpdated(subscription: any, supabase: any) {
     .from('user_subscriptions')
     .update({
       status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000),
-      current_period_end: new Date(subscription.current_period_end * 1000),
+      current_period_start: new Date((subscription as any).current_period_start * 1000),
+      current_period_end: new Date((subscription as any).current_period_end * 1000),
       cancel_at_period_end: subscription.cancel_at_period_end,
       updated_at: new Date()
     })

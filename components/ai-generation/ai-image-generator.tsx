@@ -49,7 +49,7 @@ export function AIImageGeneratorComponent({
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress] = useState<GenerationProgress | null>(null)
   const [generationResult, setGenerationResult] = useState<ImageGenerationResult | null>(null)
-  const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null)
+  const [selectedImage] = useState<GeneratedImage | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const { toast } = useToast()
 
