@@ -20,7 +20,7 @@ import {
   Gift
 } from 'lucide-react'
 import { useToast } from '../../hooks/use-toast'
-import { stripeService, StripeService } from '@/lib/stripe'
+import { stripeService, StripeService, stripePromise } from '@/lib/stripe'
 
 interface PlanFeature {
   text: string
@@ -92,21 +92,41 @@ export default function PricingPage() {
         throw new Error('プランが見つかりません')
       }
 
-      const successUrl = `${window.location.origin}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`
+      const successUrl = `${window.location.origin}/dashboard?success=true`
       const cancelUrl = `${window.location.origin}/pricing?canceled=true`
 
-      const session = await stripeService.createPaymentSession(
-        plan.stripePriceId,
-        user.id,
-        successUrl,
-        cancelUrl
-      )
+      // Create checkout session using the new API
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: plan.stripePriceId,
+          successUrl,
+          cancelUrl,
+        }),
+      })
 
-      if (session.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = session.url
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session')
+      }
+
+      const { sessionId, url } = await response.json()
+
+      // Redirect to Stripe Checkout
+      if (url) {
+        window.location.href = url
       } else {
-        throw new Error('決済セッションの作成に失敗しました')
+        const stripe = await stripePromise
+        if (!stripe) {
+          throw new Error('Stripe not loaded')
+        }
+        
+        const { error } = await stripe.redirectToCheckout({ sessionId })
+        if (error) {
+          throw error
+        }
       }
 
     } catch (error) {

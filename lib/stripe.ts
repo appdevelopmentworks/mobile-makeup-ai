@@ -1,13 +1,33 @@
-// Stripe payment integration
+import { loadStripe } from '@stripe/stripe-js'
+import Stripe from 'stripe'
+
+// Client-side Stripe
+export const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+)
+
+// Server-side Stripe (for API routes)
+export const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY || '',
+  {
+    apiVersion: '2024-12-18.acacia',
+  }
+)
+
+// Enhanced pricing plan interface
 export interface PricingPlan {
   id: string
   name: string
+  description: string
   price: number
   interval: 'month' | 'year'
   currency: string
   features: string[]
-  stripePriceId?: string
+  stripePriceId: string
   popular?: boolean
+  analysisLimit: number // -1 for unlimited
+  generationLimit: number // -1 for unlimited
+  aiEngines: string[] // Available AI engines
 }
 
 export interface PaymentSession {
@@ -34,56 +54,69 @@ export class StripeService {
     this.secretKey = process.env.STRIPE_SECRET_KEY || null
   }
 
-  // Available pricing plans
+  // Available pricing plans with enhanced features
   static readonly PLANS: PricingPlan[] = [
     {
       id: 'free',
       name: 'フリープラン',
+      description: '基本機能をお試しください',
       price: 0,
       interval: 'month',
       currency: 'JPY',
+      stripePriceId: '', // No Stripe price for free plan
       features: [
         '月3回まで顔分析',
-        'メイク提案機能',
-        '基本的な顔型・肌色分析',
-        'メイクアドバイス',
-      ]
+        '基本メイク提案',
+        'モックAI画像生成',
+        '履歴保存（30日間）'
+      ],
+      analysisLimit: 3,
+      generationLimit: 3,
+      aiEngines: ['mock']
     },
     {
       id: 'premium',
       name: 'プレミアムプラン',
+      description: 'すべての機能を無制限に利用',
       price: 980,
       interval: 'month',
       currency: 'JPY',
-      stripePriceId: 'price_premium_monthly', // Set in Stripe dashboard
+      stripePriceId: process.env.STRIPE_PREMIUM_PRICE_ID || 'price_premium_monthly',
       popular: true,
       features: [
         '無制限の顔分析',
-        'AI画像生成機能',
-        '詳細な顔分析レポート',
-        '高品質画像ダウンロード',
-        '複数スタイル提案',
-        'メイク履歴の保存',
-        'プライオリティサポート',
-      ]
+        'AI画像生成（Google Imagen & DALL-E）',
+        'MediaPipe高精度顔分析',
+        '詳細メイク提案',
+        '複数スタイル生成',
+        '無制限履歴保存',
+        '優先サポート'
+      ],
+      analysisLimit: -1,
+      generationLimit: -1,
+      aiEngines: ['google-imagen', 'openai-dalle', 'mock']
     },
     {
       id: 'premium-yearly',
       name: 'プレミアム年間プラン',
+      description: '年間契約で2ヶ月分お得',
       price: 9800, // 2 months free
       interval: 'year',
       currency: 'JPY',
-      stripePriceId: 'price_premium_yearly', // Set in Stripe dashboard
+      stripePriceId: process.env.STRIPE_ANNUAL_PRICE_ID || 'price_premium_yearly',
       features: [
         '無制限の顔分析',
-        'AI画像生成機能',
-        '詳細な顔分析レポート',
-        '高品質画像ダウンロード',
-        '複数スタイル提案',
-        'メイク履歴の保存',
-        'プライオリティサポート',
-        '年間プラン特典',
-      ]
+        'AI画像生成（Google Imagen & DALL-E）',
+        'MediaPipe高精度顔分析',
+        '詳細メイク提案',
+        '複数スタイル生成',
+        '無制限履歴保存',
+        '優先サポート',
+        '年間20%割引'
+      ],
+      analysisLimit: -1,
+      generationLimit: -1,
+      aiEngines: ['google-imagen', 'openai-dalle', 'mock']
     }
   ]
 

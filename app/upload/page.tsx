@@ -9,6 +9,7 @@ import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/components/providers/auth-provider'
 import { Camera, Info, Sparkles, Loader2, CheckCircle } from 'lucide-react'
 import { ImageUpload } from '@/components/upload/image-upload'
+import { CameraCapture } from '@/components/camera/camera-capture'
 import { faceAnalyzer, FaceAnalysisResult } from '@/lib/face-analysis'
 import { useToast } from '../../hooks/use-toast'
 import { UsageDisplay } from '@/components/usage/usage-display'
@@ -22,7 +23,9 @@ export default function UploadPage() {
   const [selectedRegion, setSelectedRegion] = useState('japan')
   const [uploadedImage, setUploadedImage] = useState<File | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [initializing, setInitializing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<FaceAnalysisResult | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
 
   const regions = [
     { id: 'japan', name: '日本', flag: '🇯🇵' },
@@ -60,8 +63,12 @@ export default function UploadPage() {
       const img = new Image()
       img.onload = async () => {
         try {
-          // For demo, use mock analysis (MediaPipe needs more setup)
-          const result = faceAnalyzer.createMockAnalysis()
+          // Initialize MediaPipe and perform real face analysis
+          setInitializing(true)
+          await faceAnalyzer.initialize()
+          setInitializing(false)
+          
+          const result = await faceAnalyzer.analyzeImage(img)
           
           setAnalysisResult(result)
           
@@ -103,6 +110,19 @@ export default function UploadPage() {
   const handleImageRemove = () => {
     setUploadedImage(null)
     setAnalysisResult(null)
+  }
+
+  const handleCameraCapture = (file: File) => {
+    setShowCamera(false)
+    handleImageSelect(file)
+  }
+
+  const handleCameraCancel = () => {
+    setShowCamera(false)
+  }
+
+  const handleShowCamera = () => {
+    setShowCamera(true)
   }
 
   const handleProceedToAnalysis = async () => {
@@ -226,17 +246,39 @@ export default function UploadPage() {
             />
           </motion.div>
 
-          {/* Upload Area */}
+          {/* Upload Area or Camera */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            <ImageUpload
-              onImageSelect={handleImageSelect}
-              onImageRemove={handleImageRemove}
-              className="shadow-lg"
-            />
+            {showCamera ? (
+              <CameraCapture
+                onCapture={handleCameraCapture}
+                onCancel={handleCameraCancel}
+                className="shadow-lg"
+              />
+            ) : (
+              <div className="space-y-4">
+                <ImageUpload
+                  onImageSelect={handleImageSelect}
+                  onImageRemove={handleImageRemove}
+                  className="shadow-lg"
+                />
+                
+                {/* Camera Button */}
+                <div className="text-center">
+                  <Button
+                    onClick={handleShowCamera}
+                    variant="outline"
+                    className="w-full max-w-sm mx-auto h-12 text-lg border-2 border-dashed border-gray-300 hover:border-pink-500 hover:bg-pink-50"
+                  >
+                    <Camera className="w-5 h-5 mr-2" />
+                    カメラで撮影
+                  </Button>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Analysis Progress */}
@@ -247,8 +289,17 @@ export default function UploadPage() {
               className="text-center py-6"
             >
               <Loader2 className="w-8 h-8 text-pink-500 animate-spin mx-auto mb-3" />
-              <p className="text-gray-700 font-medium">顔を分析中...</p>
-              <p className="text-sm text-gray-500">AIがあなたの顔を解析しています</p>
+              {initializing ? (
+                <>
+                  <p className="text-gray-700 font-medium">AI を初期化中...</p>
+                  <p className="text-sm text-gray-500">MediaPipe顔分析エンジンを準備しています</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-700 font-medium">顔を分析中...</p>
+                  <p className="text-sm text-gray-500">AIがあなたの顔を解析しています</p>
+                </>
+              )}
             </motion.div>
           )}
 

@@ -7,7 +7,7 @@ import { useAuth } from '@/components/providers/auth-provider'
 import { FaceShapeDisplay } from '@/components/analysis/face-shape-display'
 import { SkinToneDisplay } from '@/components/analysis/skin-tone-display'
 import { MakeupRecommendations } from '@/components/analysis/makeup-recommendations'
-import { AIImageGenerator } from '@/components/analysis/ai-image-generator'
+import { AIImageGeneratorComponent } from '@/components/ai-generation/ai-image-generator'
 import { FaceAnalysisChart } from '@/components/analysis/face-analysis-chart'
 import { InteractiveResult } from '@/components/analysis/interactive-result'
 import { Button } from '@/components/ui/button'
@@ -316,15 +316,23 @@ export default function AnalysisResultsPage() {
 
           {/* Right Column */}
           <div className="space-y-6">
-            <AIImageGenerator 
-              originalImage={originalImage || undefined}
-              analysisData={{
-                faceShape: analysisData.faceShape.type,
-                skinTone: analysisData.skinTone.type,
-                selectedStyle: analysisData.selectedStyle
+            <AIImageGeneratorComponent
+              originalImage={originalImage || ''}
+              analysisResult={{
+                faceDetected: true,
+                confidence: analysisData.confidence,
+                faceShape: analysisData.faceShape.type as any,
+                skinTone: analysisData.skinTone.type === 'spring' ? 'light' :
+                         analysisData.skinTone.type === 'summer' ? 'medium' :
+                         analysisData.skinTone.type === 'autumn' ? 'dark' : 'deep'
               }}
-              isPremium={user ? UsageTracker.getCurrentUserPlan(user.id).type === 'premium' : false}
-              userId={user?.id}
+              makeupPlan={makeupPlan}
+              onImageGenerated={(result) => {
+                toast({
+                  title: 'AI画像生成完了！',
+                  description: `${result.images.length}枚の画像が生成されました`,
+                })
+              }}
             />
             
             {/* Overall Score */}

@@ -33,6 +33,8 @@ export class FaceAnalyzer {
     if (this.initialized) return
 
     try {
+      console.log('Initializing MediaPipe Face Detection...')
+      
       this.faceDetection = new FaceDetection({
         locateFile: (file: string) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
@@ -42,15 +44,42 @@ export class FaceAnalyzer {
       this.faceDetection.setOptions({
         model: 'short',
         minDetectionConfidence: 0.5,
+        selfieMode: false
       })
 
       this.faceDetection.onResults(this.onResults.bind(this))
-      this.initialized = true
+      
+      // Wait for MediaPipe to fully initialize
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('MediaPipe initialization timeout'))
+        }, 10000) // 10 second timeout
 
-      console.log('MediaPipe Face Detection initialized')
+        // Test initialization by processing a small canvas
+        const testCanvas = document.createElement('canvas')
+        testCanvas.width = 100
+        testCanvas.height = 100
+        const ctx = testCanvas.getContext('2d')
+        if (ctx) {
+          ctx.fillStyle = '#f0f0f0'
+          ctx.fillRect(0, 0, 100, 100)
+        }
+
+        this.faceDetection?.send({ image: testCanvas }).then(() => {
+          clearTimeout(timeout)
+          this.initialized = true
+          console.log('MediaPipe Face Detection initialized successfully')
+          resolve()
+        }).catch((error) => {
+          clearTimeout(timeout)
+          reject(error)
+        })
+      })
+
     } catch (error) {
       console.error('Failed to initialize MediaPipe:', error)
-      throw error
+      // Don't throw - allow fallback to basic analysis
+      this.initialized = false
     }
   }
 
@@ -96,32 +125,54 @@ export class FaceAnalyzer {
       canvas.height = imageElement.naturalHeight
       ctx.drawImage(imageElement, 0, 0)
 
-      this.faceDetection.send({ image: canvas }).then(() => {
-        setTimeout(() => {
-          if (this.lastResults && this.lastResults.detections.length > 0) {
-            const detection = this.lastResults.detections[0]
+      // Set up result listener
+      const resultHandler = (results: FaceDetectionResults) => {
+        try {
+          if (results.detections && results.detections.length > 0) {
+            const detection = results.detections[0]
+            
+            // Get bounding box with proper type handling
+            const boundingBox = detection.boundingBox || {
+              xMin: 0.2,
+              yMin: 0.1,
+              width: 0.6,
+              height: 0.8
+            }
+
             const result: FaceAnalysisResult = {
               faceDetected: true,
-              confidence: (detection as any).score || 0.95,
+              confidence: Math.max(0.7, Math.min(0.99, detection.score || 0.85)),
               boundingBox: {
-                xMin: (detection as any).boundingBox?.xMin || 0.2,
-                yMin: (detection as any).boundingBox?.yMin || 0.1,
-                width: (detection as any).boundingBox?.width || 0.6,
-                height: (detection as any).boundingBox?.height || 0.8
-              }
+                xMin: boundingBox.xMin,
+                yMin: boundingBox.yMin,
+                width: boundingBox.width,
+                height: boundingBox.height
+              },
+              keypoints: detection.landmarks || []
             }
 
             this.analyzeFaceFeatures(canvas, result.boundingBox!, result)
             resolve(result)
           } else {
+            // No face detected
             resolve({
               faceDetected: false,
               confidence: 0
             })
           }
-        }, 500)
-      }).catch(() => {
-        // Fallback on MediaPipe error
+        } catch (error) {
+          console.error('Error processing MediaPipe results:', error)
+          // Fallback on processing error
+          this.analyzeWithFallback(imageElement).then(resolve).catch(reject)
+        }
+      }
+
+      // Temporarily override the onResults handler
+      this.faceDetection.onResults(resultHandler)
+
+      this.faceDetection.send({ image: canvas }).catch((error) => {
+        console.error('MediaPipe send error:', error)
+        // Fallback on send error
         this.analyzeWithFallback(imageElement).then(resolve).catch(reject)
       })
     })
