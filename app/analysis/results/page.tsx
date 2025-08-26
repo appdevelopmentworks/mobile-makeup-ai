@@ -27,7 +27,6 @@ import { useToast } from '../../../hooks/use-toast'
 import type { AnalysisResult } from '@/types/analysis'
 import { FaceAnalysisResult } from '@/lib/face-analysis'
 import { makeupEngine, MakeupPlan } from '@/lib/makeup-suggestions'
-import { UsageTracker } from '@/lib/usage-tracking'
 
 export default function AnalysisResultsPage() {
   const [analysisData, setAnalysisData] = useState<AnalysisResult | null>(null)

@@ -19,6 +19,7 @@ export function PWAManager() {
     if ('Notification' in window && Notification.permission === 'default') {
       requestNotificationPermission()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const registerServiceWorker = async () => {
